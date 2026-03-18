@@ -46,22 +46,17 @@ class OrderDetailsPage extends StatelessWidget {
 
         final bool canCall =
             contact?.phone != null && contact!.phone!.isNotEmpty;
-
         final String phoneText = canCall
             ? contact.phone!
             : contact?.message ?? "Phone number not available";
-
         final String cleanPhone = canCall
             ? contact.phone!.replaceAll(RegExp(r'[^0-9+]'), '')
             : "";
-
         final bool canNavigate =
             address?.latitude != null && address?.longitude != null;
-
         final String addressText = canNavigate
             ? address!.formattedAddress!
             : address?.message ?? "Address not available";
-
         final bool canVerifyUser = canCall && canNavigate;
 
         return Scaffold(
@@ -88,7 +83,6 @@ class OrderDetailsPage extends StatelessWidget {
           ),
           body: Stack(
             children: [
-              // ── Scrollable content ──────────────────────────────────
               SingleChildScrollView(
                 child: Padding(
                   padding: EdgeInsets.only(bottom: rs(context, 90)),
@@ -110,10 +104,7 @@ class OrderDetailsPage extends StatelessWidget {
                                 context,
                                 icon: Icons.schedule_rounded,
                                 label: "Time Slot",
-                                value: order.slotTime
-                                    .split(' - ')
-                                    .first
-                                    .trim(),
+                                value: order.slotTime.split(' - ').first.trim(),
                               ),
                             ),
                             SizedBox(width: rs(context, 10)),
@@ -132,8 +123,8 @@ class OrderDetailsPage extends StatelessWidget {
                       SizedBox(height: rs(context, 20)),
 
                       Padding(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: rs(context, 16)),
+                        padding:
+                        EdgeInsets.symmetric(horizontal: rs(context, 16)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -149,11 +140,7 @@ class OrderDetailsPage extends StatelessWidget {
                               title: "Customer Contact",
                               icon: Icons.person_rounded,
                               child: _contactCard(
-                                context,
-                                phoneText,
-                                cleanPhone,
-                                canCall,
-                              ),
+                                  context, phoneText, cleanPhone, canCall),
                             ),
                             SizedBox(height: rs(context, 20)),
                             _section(
@@ -161,11 +148,7 @@ class OrderDetailsPage extends StatelessWidget {
                               title: "Service Location",
                               icon: Icons.location_on_rounded,
                               child: _locationCard(
-                                context,
-                                addressText,
-                                canNavigate,
-                                address,
-                              ),
+                                  context, addressText, canNavigate, address),
                             ),
                             SizedBox(height: rs(context, 24)),
                           ],
@@ -176,6 +159,7 @@ class OrderDetailsPage extends StatelessWidget {
                 ),
               ),
 
+              // ── Bottom Action Button ─────────────────────────────────────
               Obx(() {
                 if (controller.isOtpVerified.value) {
                   return Positioned(
@@ -186,29 +170,27 @@ class OrderDetailsPage extends StatelessWidget {
                       padding: EdgeInsets.all(rs(context, 16)),
                       backgroundColor: AppColors.surface,
                       borderRadius: AppRadii.button(context),
-                      onTap: () async {
-                        if (controller.capturedImage.value == null) {
-                          final captured = await controller.captureImage();
-                          if (captured) {
-                            _showImagePreviewBottomSheet(context, controller);
-                          }
-                        } else {
-                          _showImagePreviewBottomSheet(context, controller);
-                        }
-                      },
+                      onTap: () => _showImageCaptureBottomSheet(
+                          context, controller),
                       child: _actionButton(
                         context,
-                        controller.capturedImage.value != null ? Icons.check_circle : Icons.camera_alt_rounded,
-                        controller.capturedImage.value != null ? "Complete Order" : "Capture & Complete Order",
+                        controller.allImagesCaptured
+                            ? Icons.check_circle
+                            : Icons.camera_alt_rounded,
+                        controller.allImagesCaptured
+                            ? "Complete Order"
+                            : controller.capturedCount > 0
+                            ? "Photos ${controller.capturedCount}/5 — Continue"
+                            : "Capture Order Photos",
                       ),
                     ),
                   );
                 }
 
                 if (controller.showOtpField.value) {
-                  // Use a post frame callback to ensure we don't show multiple bottom sheets
                   WidgetsBinding.instance.addPostFrameCallback((_) {
-                    if (!(Get.isBottomSheetOpen == true) && !controller.isOtpVerified.value) {
+                    if (!(Get.isBottomSheetOpen == true) &&
+                        !controller.isOtpVerified.value) {
                       _showOtpBottomSheet(context, controller);
                     }
                   });
@@ -242,7 +224,7 @@ class OrderDetailsPage extends StatelessWidget {
                     ),
                   ),
                 );
-              })
+              }),
             ],
           ),
         );
@@ -250,16 +232,503 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
+  // ============================================================
+  // ✅ NEW: 5-Image Capture Bottom Sheet
+  // ============================================================
+
+  void _showImageCaptureBottomSheet(
+      BuildContext context,
+      OrderDetailsController controller,
+      ) {
+    if (Get.isBottomSheetOpen == true) return;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black54,
+      builder: (sheetContext) {
+        return DraggableScrollableSheet(
+          initialChildSize: rs(context, 0.68),
+          minChildSize: rs(context, 0.5),
+          maxChildSize: rs(context, 0.92),
+          expand: false,
+          builder: (_, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(rs(context, 28)),
+                  topRight: Radius.circular(rs(context, 28)),
+                ),
+              ),
+              child: Column(
+                children: [
+                  // ── Handle ──────────────────────────────────────────
+                  Padding(
+                    padding: EdgeInsets.only(top: rs(context, 12)),
+                    child: CustomContainer(
+                      width: rs(context, 40),
+                      height: rs(context, 4),
+                      backgroundColor:
+                      AppColors.textSecondary.withOpacity(0.3),
+                      borderRadius: BorderRadius.circular(rs(context, 10)),
+                    ),
+                  ),
+
+                  // ── Header ──────────────────────────────────────────
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(
+                      rs(context, 20),
+                      rs(context, 14),
+                      rs(context, 20),
+                      rs(context, 4),
+                    ),
+                    child: Row(
+                      children: [
+                        CustomContainer(
+                          padding: EdgeInsets.all(rs(context, 10)),
+                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(100),
+                          child: Icon(
+                            Icons.photo_camera_rounded,
+                            color: AppColors.primary,
+                            size: rs(context, 22),
+                          ),
+                        ),
+                        SizedBox(width: rs(context, 10)),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Order Completion Photos",
+                                style: AppTextStyles.heading4(context)
+                                    .copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              Obx(() {
+                                final c = controller.capturedImages
+                                    .where((f) => f != null)
+                                    .length;
+                                return Text(
+                                  "$c of 5 photos captured",
+                                  style: AppTextStyles.bodySmall(context)
+                                      .copyWith(color: AppColors.textSecondary),
+                                );
+                              }),
+                            ],
+                          ),
+                        ),
+                        // Progress badge — reads .capturedImages directly
+                        Obx(() {
+                          final count = controller.capturedImages
+                              .where((f) => f != null)
+                              .length;
+                          return _progressBadge(context, count);
+                        }),
+                      ],
+                    ),
+                  ),
+
+                  // ── Progress Bar ─────────────────────────────────────
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rs(context, 20),
+                      vertical: rs(context, 10),
+                    ),
+                    child: Obx(() {
+                      final count = controller.capturedImages
+                          .where((f) => f != null)
+                          .length;
+                      return _linearProgressBar(context, count);
+                    }),
+                  ),
+
+                  // ── 5-Slot Grid — NO outer Obx; each slot has its own Obx
+                  Flexible(
+                    child: SingleChildScrollView(
+                      controller: scrollController,
+                      padding: EdgeInsets.fromLTRB(
+                        rs(context, 16),
+                        rs(context, 4),
+                        rs(context, 16),
+                        rs(context, 16),
+                      ),
+                      child: _buildImageGrid(context, controller, sheetContext),
+                    ),
+                  ),
+
+                  // ── Bottom Action — reads .capturedImages inside widget
+                  _buildSheetBottomBar(context, controller, sheetContext),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _progressBadge(BuildContext context, int count) {
+    final isDone = count == 5;
+    return CustomContainer(
+      padding: EdgeInsets.symmetric(
+        horizontal: rs(context, 12),
+        vertical: rs(context, 6),
+      ),
+      backgroundColor: isDone
+          ? AppColors.success.withOpacity(0.12)
+          : AppColors.primary.withOpacity(0.1),
+      borderRadius: BorderRadius.circular(rs(context, 20)),
+      child: Text(
+        "$count/5",
+        style: AppTextStyles.bodySmall(context).copyWith(
+          color: isDone ? AppColors.success : AppColors.primary,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget _linearProgressBar(BuildContext context, int count) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(rs(context, 8)),
+      child: LinearProgressIndicator(
+        value: count / 5,
+        minHeight: rs(context, 6),
+        backgroundColor: AppColors.textSecondary.withOpacity(0.12),
+        valueColor: AlwaysStoppedAnimation<Color>(
+          count == 5 ? AppColors.success : AppColors.primary,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageGrid(
+      BuildContext context,
+      OrderDetailsController controller,
+      BuildContext sheetContext,
+      ) {
+    // Layout: 2 cols top row, 3 cols bottom row (total 5) — unique asymmetric grid
+    return Column(
+      children: [
+        // Top row: slots 0, 1 (2 large tiles)
+        Row(
+          children: [
+            Expanded(
+                child: _imageSlot(context, controller, 0, isLarge: true)),
+            SizedBox(width: rs(context, 10)),
+            Expanded(
+                child: _imageSlot(context, controller, 1, isLarge: true)),
+          ],
+        ),
+
+        SizedBox(height: rs(context, 10)),
+
+        // Bottom row: slots 2, 3, 4 (3 smaller tiles)
+        Row(
+          children: [
+            Expanded(child: _imageSlot(context, controller, 2)),
+            SizedBox(width: rs(context, 8)),
+            Expanded(child: _imageSlot(context, controller, 3)),
+            SizedBox(width: rs(context, 8)),
+            Expanded(child: _imageSlot(context, controller, 4)),
+          ],
+        ),
+
+        SizedBox(height: rs(context, 8)),
+
+        // Hint row
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.info_outline_rounded,
+              size: rs(context, 13),
+              color: AppColors.textSecondary.withOpacity(0.6),
+            ),
+            SizedBox(width: rs(context, 4)),
+            Text(
+              "Tap a slot to capture · Tap filled slot to retake",
+              style: AppTextStyles.bodySmall(context).copyWith(
+                color: AppColors.textSecondary.withOpacity(0.6),
+                fontSize: rs(context, 11),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _imageSlot(
+      BuildContext context,
+      OrderDetailsController controller,
+      int index, {
+        bool isLarge = false,
+      }) {
+    final double height = isLarge ? rs(context, 165) : rs(context, 110);
+
+    return Obx(() {
+      final file = controller.capturedImages[index];
+      final isFilled = file != null;
+
+      return GestureDetector(
+        onTap: () => controller.captureImageAtSlot(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          curve: Curves.easeOut,
+          height: height,
+          decoration: BoxDecoration(
+            color: isFilled
+                ? Colors.transparent
+                : AppColors.textSecondary.withOpacity(0.06),
+            borderRadius: BorderRadius.circular(rs(context, 16)),
+            border: Border.all(
+              color: isFilled
+                  ? AppColors.success.withOpacity(0.5)
+                  : AppColors.textSecondary.withOpacity(0.2),
+              width: isFilled ? 2 : 1.5,
+            ),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(rs(context, 15)),
+            child: isFilled
+                ? Stack(
+              fit: StackFit.expand,
+              children: [
+                // ── Captured image ─────────────────────────
+                Image.file(
+                  file,
+                  fit: BoxFit.cover,
+                ),
+
+                // ── Dark gradient overlay (bottom) ──────────
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Container(
+                    height: rs(context, 44),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          Colors.black.withOpacity(0.55),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Success tick (top-left) ─────────────────
+                Positioned(
+                  top: rs(context, 7),
+                  left: rs(context, 7),
+                  child: Container(
+                    padding: EdgeInsets.all(rs(context, 3)),
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.check_rounded,
+                      color: Colors.white,
+                      size: rs(context, 12),
+                    ),
+                  ),
+                ),
+
+                // ── Retake icon (top-right) ─────────────────
+                Positioned(
+                  top: rs(context, 7),
+                  right: rs(context, 7),
+                  child: GestureDetector(
+                    onTap: () => controller.deleteImageAtSlot(index),
+                    child: Container(
+                      padding: EdgeInsets.all(rs(context, 5)),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close_rounded,
+                        color: Colors.white,
+                        size: rs(context, 13),
+                      ),
+                    ),
+                  ),
+                ),
+
+                // ── Photo number label (bottom-left) ────────
+                Positioned(
+                  bottom: rs(context, 6),
+                  left: rs(context, 8),
+                  child: Text(
+                    "Photo ${index + 1}",
+                    style: AppTextStyles.bodySmall(context).copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                      fontSize: rs(context, 11),
+                    ),
+                  ),
+                ),
+              ],
+            )
+                : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // ── Camera icon ──────────────────────────────
+                Container(
+                  padding: EdgeInsets.all(rs(context, 10)),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withOpacity(0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.add_a_photo_rounded,
+                    color: AppColors.primary.withOpacity(0.6),
+                    size: rs(context, isLarge ? 26 : 22),
+                  ),
+                ),
+                SizedBox(height: rs(context, 6)),
+                Text(
+                  "Photo ${index + 1}",
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: AppColors.textSecondary.withOpacity(0.7),
+                    fontWeight: FontWeight.w500,
+                    fontSize: rs(context, 11),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  Widget _buildSheetBottomBar(
+      BuildContext context,
+      OrderDetailsController controller,
+      BuildContext sheetContext,
+      ) {
+    return Obx(() {
+      final count = controller.capturedCount;
+      final allDone = controller.allImagesCaptured;
+
+      return Container(
+        padding: EdgeInsets.fromLTRB(
+          rs(context, 16),
+          rs(context, 12),
+          rs(context, 16),
+          rs(context, 24),
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: Border(
+            top: BorderSide(
+              color: AppColors.textSecondary.withOpacity(0.1),
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            // ── Retake All / Cancel ────────────────────────────────
+            if (count > 0)
+              Padding(
+                padding: EdgeInsets.only(right: rs(context, 10)),
+                child: GestureDetector(
+                  onTap: () {
+                    controller.clearAllImages();
+                  },
+                  child: CustomContainer(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rs(context, 14),
+                      vertical: rs(context, 14),
+                    ),
+                    backgroundColor: AppColors.error.withOpacity(0.07),
+                    borderRadius: BorderRadius.circular(rs(context, 14)),
+                    border: Border.all(
+                      color: AppColors.error.withOpacity(0.25),
+                    ),
+                    child: Icon(
+                      Icons.refresh_rounded,
+                      color: AppColors.error,
+                      size: rs(context, 22),
+                    ),
+                  ),
+                ),
+              ),
+
+            // ── Main CTA ──────────────────────────────────────────
+            Expanded(
+              child: GestureDetector(
+                onTap: (allDone || count >= OrderDetailsController.minImageCount)
+                    ? () async {
+                  Navigator.of(sheetContext).pop();
+                  await controller.completeOrder();
+                }
+                    : count < OrderDetailsController.maxImageCount
+                    ? () => controller.captureNextImage()
+                    : null,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 220),
+                  padding: EdgeInsets.symmetric(vertical: rs(context, 15)),
+                  decoration: BoxDecoration(
+                    color: allDone
+                        ? AppColors.success.withOpacity(0.9)
+                        : AppColors.secondary.withOpacity(0.85),
+                    borderRadius: BorderRadius.circular(rs(context, 16)),
+                  ),
+                  // 👇 isLoading check REMOVED — FullScreenLoader covers the whole screen
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        allDone
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.add_a_photo_rounded,
+                        color: Colors.white,
+                        size: rs(context, 20),
+                      ),
+                      SizedBox(width: rs(context, 8)),
+                      Text(
+                        allDone || count >= OrderDetailsController.minImageCount
+                            ? "Complete Order"
+                            : "Capture Photo ${count + 1}",
+                        style: AppTextStyles.buttonMedium(context).copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // ============================================================
+  // OTP Bottom Sheet (unchanged)
+  // ============================================================
+
   void _showOtpBottomSheet(
       BuildContext context,
       OrderDetailsController controller,
       ) {
-    // Prevent multiple bottom sheets
     if (Get.isBottomSheetOpen == true) return;
 
     final RxList<String> digits = <String>[].obs;
 
-    // Show bottom sheet without affecting navigation stack
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -270,7 +739,6 @@ class OrderDetailsPage extends StatelessWidget {
       builder: (BuildContext sheetContext) {
         return WillPopScope(
           onWillPop: () async {
-            // Allow back button only in certain conditions
             if (controller.remainingSeconds.value <= 0 ||
                 controller.isOtpVerified.value ||
                 digits.isEmpty) {
@@ -283,16 +751,13 @@ class OrderDetailsPage extends StatelessWidget {
             final min = (sec ~/ 60).toString().padLeft(2, '0');
             final s = (sec % 60).toString().padLeft(2, '0');
 
-            // ✅ CLOSE ONLY BOTTOM SHEET, NOT THE PAGE
             if (controller.isOtpVerified.value) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                // This will only close the bottom sheet, not the page
                 Navigator.of(sheetContext).pop();
               });
               return const SizedBox.shrink();
             }
 
-            // Close when timer expires
             if (sec == 0) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 Navigator.of(sheetContext).pop();
@@ -315,23 +780,21 @@ class OrderDetailsPage extends StatelessWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Handle
                   CustomContainer(
                     width: rs(context, 40),
                     height: rs(context, 4),
-                    backgroundColor: AppColors.textSecondary.withOpacity(0.3),
+                    backgroundColor:
+                    AppColors.textSecondary.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(rs(context, 10)),
                   ),
-
                   SizedBox(height: rs(context, 16)),
-
-                  // Header with timer
                   Row(
                     children: [
                       CustomContainer(
                         padding: EdgeInsets.all(rs(context, 10)),
                         backgroundColor: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(rs(context, 100)),
+                        borderRadius:
+                        BorderRadius.circular(rs(context, 100)),
                         child: Icon(
                           Icons.security,
                           color: AppColors.primary,
@@ -350,21 +813,22 @@ class OrderDetailsPage extends StatelessWidget {
                             ),
                             Text(
                               "Enter 6-digit OTP sent to customer",
-                              style: AppTextStyles.bodySmall(context).copyWith(
-                                color: AppColors.textSecondary,
-                              ),
+                              style: AppTextStyles.bodySmall(context)
+                                  .copyWith(
+                                  color: AppColors.textSecondary),
                             ),
                           ],
                         ),
                       ),
-                      // Timer chip
                       CustomContainer(
                         padding: EdgeInsets.symmetric(
                           horizontal: rs(context, 10),
                           vertical: rs(context, 6),
                         ),
-                        backgroundColor: AppColors.warning.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(rs(context, 20)),
+                        backgroundColor:
+                        AppColors.warning.withOpacity(0.12),
+                        borderRadius:
+                        BorderRadius.circular(rs(context, 20)),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
@@ -376,7 +840,8 @@ class OrderDetailsPage extends StatelessWidget {
                             SizedBox(width: rs(context, 4)),
                             Text(
                               "$min:$s",
-                              style: AppTextStyles.bodySmall(context).copyWith(
+                              style: AppTextStyles.bodySmall(context)
+                                  .copyWith(
                                 color: AppColors.warning,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -386,17 +851,13 @@ class OrderDetailsPage extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   SizedBox(height: rs(context, 22)),
-
-                  // OTP Dots
                   Obx(() {
                     return Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: List.generate(6, (i) {
                         final filled = i < digits.length;
                         final isActive = i == digits.length;
-
                         return AnimatedContainer(
                           duration: const Duration(milliseconds: 150),
                           width: rs(context, 46),
@@ -407,13 +868,15 @@ class OrderDetailsPage extends StatelessWidget {
                                 : isActive
                                 ? AppColors.primary.withOpacity(0.04)
                                 : AppColors.white,
-                            borderRadius: BorderRadius.circular(rs(context, 10)),
+                            borderRadius: BorderRadius.circular(
+                                rs(context, 10)),
                             border: Border.all(
                               color: filled
                                   ? AppColors.primary
                                   : isActive
                                   ? AppColors.primary
-                                  : AppColors.textSecondary.withOpacity(0.25),
+                                  : AppColors.textSecondary
+                                  .withOpacity(0.25),
                               width: filled || isActive ? 2 : 1,
                             ),
                           ),
@@ -423,7 +886,8 @@ class OrderDetailsPage extends StatelessWidget {
                               width: rs(context, 12),
                               height: rs(context, 12),
                               backgroundColor: AppColors.primary,
-                              borderRadius: BorderRadius.circular(rs(context, 12)),
+                              borderRadius: BorderRadius.circular(
+                                  rs(context, 12)),
                             )
                                 : isActive
                                 ? CustomContainer(
@@ -438,10 +902,7 @@ class OrderDetailsPage extends StatelessWidget {
                       }),
                     );
                   }),
-
                   SizedBox(height: rs(context, 20)),
-
-                  // Number Pad
                   _buildNumberPad(context, digits, controller, sheetContext),
                 ],
               ),
@@ -450,10 +911,8 @@ class OrderDetailsPage extends StatelessWidget {
         );
       },
     ).then((_) {
-      // Clean up when bottom sheet is closed
       digits.clear();
       controller.otpController.clear();
-      // DON'T pop anything here - just clean up
     });
   }
 
@@ -482,38 +941,37 @@ class OrderDetailsPage extends StatelessWidget {
 
               return Expanded(
                 child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: rs(context, 5)),
+                  padding:
+                  EdgeInsets.symmetric(horizontal: rs(context, 5)),
                   child: Material(
                     color: Colors.transparent,
-                    borderRadius: BorderRadius.circular(rs(context, 14)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 14)),
                     child: InkWell(
-                      borderRadius: BorderRadius.circular(rs(context, 14)),
+                      borderRadius:
+                      BorderRadius.circular(rs(context, 14)),
                       onTap: () async {
-                        // Don't process taps if OTP is already verified
                         if (controller.isOtpVerified.value) {
-                          // Close only bottom sheet, not the page
                           Navigator.of(sheetContext).pop();
                           return;
                         }
-
                         if (isDel) {
                           if (digits.isNotEmpty) {
                             digits.removeLast();
-                            controller.otpController.text = digits.join();
+                            controller.otpController.text =
+                                digits.join();
                           }
                         } else if (isCancel) {
-                          // Cancel button - close only bottom sheet
                           Navigator.of(sheetContext).pop();
                         } else {
                           if (digits.length < 6) {
                             digits.add(key);
-                            controller.otpController.text = digits.join();
-
+                            controller.otpController.text =
+                                digits.join();
                             if (digits.length == 6) {
-                              await Future.delayed(const Duration(milliseconds: 250));
+                              await Future.delayed(
+                                  const Duration(milliseconds: 250));
                               await controller.confirmOtp();
-                              // Bottom sheet will be closed in confirmOtp method
-                              // But ensure we don't pop the page
                             }
                           }
                         }
@@ -523,19 +981,23 @@ class OrderDetailsPage extends StatelessWidget {
                         backgroundColor: isCancel
                             ? AppColors.error.withOpacity(0.07)
                             : isDel
-                            ? AppColors.textSecondary.withOpacity(0.07)
+                            ? AppColors.textSecondary
+                            .withOpacity(0.07)
                             : AppColors.white,
-                        borderRadius: BorderRadius.circular(rs(context, 14)),
+                        borderRadius:
+                        BorderRadius.circular(rs(context, 14)),
                         border: Border.all(
                           color: isAction
                               ? Colors.transparent
-                              : AppColors.textSecondary.withOpacity(0.12),
+                              : AppColors.textSecondary
+                              .withOpacity(0.12),
                         ),
                         boxShadow: isAction
                             ? null
                             : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color:
+                            Colors.black.withOpacity(0.04),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -550,14 +1012,18 @@ class OrderDetailsPage extends StatelessWidget {
                               : isCancel
                               ? Text(
                             "Cancel",
-                            style: AppTextStyles.bodySmall(context).copyWith(
+                            style: AppTextStyles.bodySmall(
+                                context)
+                                .copyWith(
                               color: AppColors.error,
                               fontWeight: FontWeight.w600,
                             ),
                           )
                               : Text(
                             key,
-                            style: AppTextStyles.heading4(context).copyWith(
+                            style: AppTextStyles.heading4(
+                                context)
+                                .copyWith(
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
@@ -574,6 +1040,10 @@ class OrderDetailsPage extends StatelessWidget {
       }).toList(),
     );
   }
+
+  // ============================================================
+  // Common Widgets
+  // ============================================================
 
   Widget _infoCard(
       BuildContext context, {
@@ -844,201 +1314,6 @@ class OrderDetailsPage extends StatelessWidget {
         SizedBox(height: rs(context, 10)),
         child,
       ],
-    );
-  }
-
-  void _showImagePreviewBottomSheet(
-      BuildContext context,
-      OrderDetailsController controller,
-      ) {
-    if (Get.isBottomSheetOpen ?? false) return;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      isDismissible: false,
-      enableDrag: false,
-      backgroundColor: Colors.transparent,
-      barrierColor: Colors.black54,
-      builder: (sheetContext) {
-        return Obx(() {
-          final imageFile = controller.capturedImage.value;
-
-          if (imageFile == null) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (Get.isBottomSheetOpen ?? false) {
-                Navigator.of(sheetContext).pop();
-              }
-            });
-            return const SizedBox.shrink();
-          }
-
-          return CustomContainer(
-            width: double.infinity,
-            padding: EdgeInsets.fromLTRB(
-              rs(context, 20),
-              rs(context, 18),
-              rs(context, 20),
-              rs(context, 28),
-            ),
-            backgroundColor: AppColors.surface,
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(rs(context, 28)),
-              topRight: Radius.circular(rs(context, 28)),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-
-                CustomContainer(
-                  width: rs(context, 40),
-                  height: rs(context, 4),
-                  backgroundColor: AppColors.textSecondary.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(rs(context, 10)),
-                ),
-
-                SizedBox(height: rs(context, 16)),
-
-                Row(
-                  children: [
-                    CustomContainer(
-                      padding: EdgeInsets.all(rs(context, 10)),
-                      backgroundColor: AppColors.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(100),
-                      child: Icon(
-                        Icons.camera_alt_rounded,
-                        color: AppColors.primary,
-                        size: rs(context, 22),
-                      ),
-                    ),
-
-                    SizedBox(width: rs(context, 10)),
-
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Order Photo",
-                            style: AppTextStyles.heading4(context)
-                                .copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            "Preview before completing order",
-                            style: AppTextStyles.bodySmall(context).copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-
-                SizedBox(height: rs(context, 16)),
-
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(rs(context, 16)),
-                  child: Image.file(
-                    imageFile,
-                    width: double.infinity,
-                    height: rs(context, 280),
-                    fit: BoxFit.cover,
-                  ),
-                ),
-
-                SizedBox(height: rs(context, 16)),
-
-                Row(
-                  children: [
-
-                    Expanded(
-                      child: CustomContainer(
-                        height: rs(context, 52),
-                        onTap: () {
-                          controller.deleteCapturedImage();
-                          Navigator.of(sheetContext).pop();
-                        },
-                        backgroundColor: AppColors.error.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(rs(context, 14)),
-                        border: Border.all(
-                          color: AppColors.error.withOpacity(0.3),
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.delete_outline_rounded,
-                              color: AppColors.error,
-                              size: rs(context, 20),
-                            ),
-                            SizedBox(width: rs(context, 6)),
-                            Text(
-                              "Retake",
-                              style: AppTextStyles.bodyMedium(context).copyWith(
-                                color: AppColors.error,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    SizedBox(width: rs(context, 12)),
-
-                    Expanded(
-                      flex: 2,
-                      child: Obx(() => CustomContainer(
-                        height: rs(context, 52),
-                        onTap: controller.isLoading.value
-                            ? null
-                            : () async {
-                          Navigator.of(sheetContext).pop();
-                          await controller.completeOrder();
-                        },
-                        backgroundColor: controller.isLoading.value
-                            ? AppColors.secondary.withOpacity(0.5)
-                            : AppColors.secondary.withOpacity(0.9),
-                        borderRadius: BorderRadius.circular(rs(context, 14)),
-                        child: controller.isLoading.value
-                            ? Center(
-                          child: SizedBox(
-                            width: rs(context, 22),
-                            height: rs(context, 22),
-                            child: CircularProgressIndicator(
-                              color: AppColors.white,
-                              strokeWidth: 2.5,
-                            ),
-                          ),
-                        )
-                            : Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.check_circle_outline_rounded,
-                              color: AppColors.white,
-                              size: rs(context, 20),
-                            ),
-                            SizedBox(width: rs(context, 6)),
-                            Text(
-                              "Complete Order",
-                              style: AppTextStyles.bodyMedium(context).copyWith(
-                                color: AppColors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        });
-      },
     );
   }
 }

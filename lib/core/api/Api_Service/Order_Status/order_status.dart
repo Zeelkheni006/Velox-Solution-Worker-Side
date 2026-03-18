@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import '../../../utils/app_storage.dart';
 import '../../api_endpoints.dart';
 
@@ -27,7 +26,7 @@ class OrderStatus {
 
   static Future<Map<String, dynamic>> orderComplete({
     required int orderId,
-    required File imageFile,
+    required List<File> imageFiles, // ✅ CHANGED: single → list of 5
   }) async {
     final token = await AppStorage.getWorkerAccessToken();
 
@@ -38,15 +37,16 @@ class OrderStatus {
     var request = http.MultipartRequest("POST", uri);
 
     request.headers['Authorization'] = "Bearer $token";
-
     request.fields['order_id'] = orderId.toString();
 
-    request.files.add(
-      await http.MultipartFile.fromPath(
-        'image',
-        imageFile.path,
-      ),
-    );
+    for (final file in imageFiles) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'images',
+          file.path,
+        ),
+      );
+    }
 
     var response = await request.send();
     var responseData = await response.stream.bytesToString();
