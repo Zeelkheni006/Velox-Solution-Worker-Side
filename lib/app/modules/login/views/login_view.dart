@@ -8,6 +8,7 @@ import '../../../../core/utils/app_responsive.dart';
 import '../../../../core/utils/custom_container.dart';
 import '../../../../core/utils/custom_divider.dart';
 import '../../../../core/utils/custom_textField.dart';
+import '../../../routes/app_pages.dart';
 import '../controllers/login_controller.dart';
 
 class LoginScreen extends GetView<LoginController> {
@@ -174,7 +175,7 @@ class LoginScreen extends GetView<LoginController> {
       alignment: Alignment.centerRight,
       child: CustomContainer(
         onTap: () {
-          _showForgotPasswordDialog(context);
+          Get.toNamed(Routes.FORGOTPASSWORD);
         },
         padding: EdgeInsets.symmetric(
           horizontal: rs(context, 8),
@@ -287,96 +288,5 @@ class LoginScreen extends GetView<LoginController> {
         ),
       );
     });
-  }
-
-  // ==================== FORGOT PASSWORD DIALOG ====================
-  void _showForgotPasswordDialog(BuildContext context) {
-    final emailController = TextEditingController();
-
-    Get.dialog(
-      Dialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(AppRadii.lg(context)),
-        ),
-        child: Padding(
-          padding: EdgeInsets.all(rs(context, 24)),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    Icons.lock_reset_rounded,
-                    color: AppColors.secondary,
-                    size: rs(context, 28),
-                  ),
-                  SizedBox(width: rs(context, 12)),
-                  Text(
-                    "Reset Password",
-                    style: AppTextStyles.heading3(context).copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: rs(context, 16)),
-              Text(
-                "Enter your email address and we'll send you a link to reset your password.",
-                style: AppTextStyles.bodyMedium(context).copyWith(
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              SizedBox(height: rs(context, 24)),
-              CustomTextField(
-                controller: emailController,
-                labelText: "Email Address",
-                hintText: "example@email.com",
-                keyboardType: TextInputType.emailAddress,
-              ),
-              SizedBox(height: rs(context, 24)),
-              Row(
-                children: [
-                  Expanded(
-                    child: CustomContainer(
-                      width: double.infinity,
-                      padding: EdgeInsets.symmetric(
-                        vertical: rs(context, 14),
-                      ),
-                      backgroundColor: Colors.transparent,
-                      border: Border.all(color: AppColors.primary),
-                      borderRadius: BorderRadius.all(AppRadii.sm(context)),
-                      onTap: () => Get.back(),
-                      centerText: true,
-                      text: "Cancel",
-                      textStyle: AppTextStyles.buttonMedium(context).copyWith(
-                        color: AppColors.primary,
-                      ),
-                    )
-                  ),
-                  SizedBox(width: rs(context, 12)),
-                  Expanded(
-                    child: CustomContainer(
-                      width: double.infinity,
-                      height: rs(context, 50),
-                      backgroundColor: AppColors.secondary,
-                      borderRadius: BorderRadius.all(AppRadii.sm(context)),
-                      padding: EdgeInsets.symmetric(vertical: rs(context, 14)),
-                      onTap: () {
-
-                      },
-                      text: "Send Link",
-                      textStyle: AppTextStyles.buttonMedium(context).copyWith(
-                        color: AppColors.white,
-                      ),
-                    )
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }

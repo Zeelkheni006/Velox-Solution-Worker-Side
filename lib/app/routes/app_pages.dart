@@ -2,6 +2,8 @@ import 'package:get/get.dart';
 
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
+import '../modules/forgotpassword/bindings/forgotpassword_binding.dart';
+import '../modules/forgotpassword/views/forgotpassword_view.dart';
 import '../modules/historyorderlist/bindings/historyorderlist_binding.dart';
 import '../modules/historyorderlist/views/historyorderlist_view.dart';
 import '../modules/leavehistory/bindings/leavehistory_binding.dart';
@@ -85,6 +87,11 @@ class AppPages {
       name: _Paths.OTPVERIFYSCREEN,
       page: () => const OtpverifyscreenView(),
       binding: OtpverifyscreenBinding(),
+    ),
+    GetPage(
+      name: _Paths.FORGOTPASSWORD,
+      page: () => const ForgotpasswordView(),
+      binding: ForgotpasswordBinding(),
     ),
   ];
 }
