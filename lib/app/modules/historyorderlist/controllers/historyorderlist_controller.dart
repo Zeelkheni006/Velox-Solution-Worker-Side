@@ -1,0 +1,43 @@
+import 'package:get/get.dart';
+import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order.dart';
+import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order_model.dart';
+import '../../../../core/providers/order_provider.dart';
+
+class HistoryOrdersListController extends GetxController {
+  RxBool isHistoryOrderLoading = true.obs;
+  RxList<OrderModel> historyOrders = <OrderModel>[].obs;
+
+  @override
+  void onInit() {
+    super.onInit();
+    fetchHistoryOrders();
+  }
+
+  Future<void> fetchHistoryOrders() async {
+    try {
+      isHistoryOrderLoading(true);
+
+      final response = await OrderApi.getHistoryOrders();
+
+      print("HISTORY ORDER BODY ::: ${response}");
+
+      if (response['success'] == true && response['data'] != null) {
+        final List list = response['data']['orders'];
+
+        historyOrders.value =
+            list.map((e) => OrderModel.fromJson(e)).toList();
+      } else {
+        historyOrders.clear();
+      }
+    } catch (e) {
+      print("UPCOMING ORDER CONTROLLER ERROR ::: $e");
+      historyOrders.clear();
+    } finally {
+      isHistoryOrderLoading(false);
+    }
+  }
+
+  Future<void> refreshOrders() async {
+    await fetchHistoryOrders();
+  }
+}
