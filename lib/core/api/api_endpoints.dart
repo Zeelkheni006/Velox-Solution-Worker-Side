@@ -5,11 +5,11 @@ class ApiUrl {
   // static const String baseUrl = "http://72.61.245.134:8000";
 
   // ZEEL //
-  static const String baseUrl = "http://192.168.29.69:5000";
+  // static const String baseUrl = "http://192.168.29.69:5000";
 
 
   // HARSH //
-  // static const String baseUrl = "http://192.168.29.164:5000";
+  static const String baseUrl = "http://192.168.29.164:5000";
 
   // AUTH //
   static const String LoginInitiate = "/api/v1/worker/auth/login/initiate";
@@ -22,6 +22,7 @@ class ApiUrl {
   static const String upcomingorders = "/api/v1/worker/dashboard/orders/upcoming";
   static const String historyorders = "/api/v1/worker/dashboard/orders/history";
   static String orderDetails(int orderId) => "/api/v1/worker/dashboard/orders/$orderId";
+  static const String closeorder = "/api/v1/worker/dashboard/orders/close-order";
 
   // LOGOUT //
   static const String logout = "/api/v1/worker/auth/logout";
