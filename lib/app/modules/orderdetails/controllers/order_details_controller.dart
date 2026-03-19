@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../../../core/api/Api_Service/Close_Order/close_order.dart';
 import '../../../../core/api/Api_Service/Order_Status/order_status.dart';
 import '../../../../core/api/Api_Service/Send_Otp/send_otp.dart';
 import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order.dart';
@@ -30,29 +31,84 @@ class OrderDetailsController extends GetxController {
   static const int maxImageCount = 5;
   static const int minImageCount = 1;
 
-  // UI preview mate (original full quality)
   var capturedImages = RxList<File?>(List.filled(5, null));
 
-  // Background compressed files store karvani map
-  // Key = slot index, Value = Future<compressed File>
   final Map<int, Future<File?>> _compressionFutures = {};
   final Map<int, File?> _compressedCache = {};
 
   final ImagePicker _picker = ImagePicker();
 
-  // ── Helpers ──────────────────────────────────────────────────────────────
-
   bool get allImagesCaptured => capturedCount >= minImageCount;
   int get capturedCount => capturedImages.where((img) => img != null).length;
   int get nextEmptySlot => capturedImages.indexWhere((img) => img == null);
 
-  // ── STEP 1: Photo le tyare INSTANTLY preview show karo + background compress ─
+  String get paymentStatus => order.value?.paymentStatus ?? '';
+  bool get isPaymentUnpaid => paymentStatus == 'unpaid';
+
+  var orderServiceCompleted = false.obs;
+  var orderIsFinal = false.obs;
+  String get finalOrderStatus => order.value?.orderStatus ?? '';
+
+  // ── FIX: single flag to prevent duplicate bottom sheet ──
+  bool _otpSheetScheduled = false;
+
+  @override
+  void onInit() {
+    super.onInit();
+    print("CURRENT ORDER ID ::: $orderId");
+    // ── FIX: run sequentially so checkOtpStateOnLoad runs
+    //         AFTER fetchOrderDetails + checkOrderStatus finish ──
+    _initPage();
+  }
+
+  Future<void> _initPage() async {
+    await fetchOrderDetails();
+    await checkOrderStatus();
+    // ── Only check saved OTP session after API calls complete ──
+    await checkOtpStateOnLoad();
+  }
+
+  // ============================================================
+  // OTP Sheet scheduling — single entry point
+  // ============================================================
+
+  /// Call this instead of directly opening the sheet.
+  /// Ensures the sheet is opened at most once per page visit.
+  void scheduleOtpSheet(BuildContext context) {
+    if (_otpSheetScheduled) return;
+    if (Get.isBottomSheetOpen == true) return;
+    if (isOtpVerified.value) return;
+
+    _otpSheetScheduled = true;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Double-check state is still valid before opening
+      if (!isOtpVerified.value && showOtpField.value) {
+        // Import and call the view's show method via callback
+        _onOpenOtpSheet?.call(context);
+      }
+      // Reset flag so it can trigger again if sheet was dismissed
+      // and showOtpField becomes true again (e.g. resend OTP)
+      _otpSheetScheduled = false;
+    });
+  }
+
+  // Callback set by the View to open the OTP bottom sheet
+  void Function(BuildContext context)? _onOpenOtpSheet;
+
+  void setOtpSheetCallback(void Function(BuildContext context) callback) {
+    _onOpenOtpSheet = callback;
+  }
+
+  // ============================================================
+  // Image capture
+  // ============================================================
 
   Future<bool> captureImageAtSlot(int slotIndex) async {
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        imageQuality: 100,           // Full quality for preview
+        imageQuality: 100,
         preferredCameraDevice: CameraDevice.rear,
       );
 
@@ -60,19 +116,13 @@ class OrderDetailsController extends GetxController {
 
       final originalFile = File(photo.path);
 
-      // Instantly update UI with original (zero delay for user)
       final list = List<File?>.from(capturedImages);
       list[slotIndex] = originalFile;
       capturedImages.assignAll(list);
 
-      // Start compression in background — user next photo capture kare tyare
-      // background ma compress thai jay
-      _compressionFutures[slotIndex] = _compressInBackground(
-        originalFile,
-        slotIndex,
-      );
+      _compressionFutures[slotIndex] =
+          _compressInBackground(originalFile, slotIndex);
 
-      // Cache result jyare ready thay
       _compressionFutures[slotIndex]!.then((compressed) {
         if (compressed != null) {
           _compressedCache[slotIndex] = compressed;
@@ -92,8 +142,6 @@ class OrderDetailsController extends GetxController {
     }
   }
 
-  // ── Background compression (runs while user is busy with other slots) ─────
-
   Future<File?> _compressInBackground(File source, int index) async {
     try {
       final dir = await getTemporaryDirectory();
@@ -102,17 +150,17 @@ class OrderDetailsController extends GetxController {
       final result = await FlutterImageCompress.compressAndGetFile(
         source.path,
         targetPath,
-        quality: 75,         // 75% = visually good, ~200–400KB per photo
+        quality: 75,
         minWidth: 1024,
         minHeight: 768,
         format: CompressFormat.jpeg,
-        keepExif: false,     // Strip EXIF = faster upload + privacy
+        keepExif: false,
       );
 
       return result != null ? File(result.path) : null;
     } catch (e) {
       print("COMPRESS ERROR slot $index ::: $e");
-      return null; // Original fallback
+      return null;
     }
   }
 
@@ -125,7 +173,6 @@ class OrderDetailsController extends GetxController {
   void deleteImageAtSlot(int slotIndex) {
     _compressionFutures.remove(slotIndex);
     _compressedCache.remove(slotIndex);
-
     final list = List<File?>.from(capturedImages);
     list[slotIndex] = null;
     capturedImages.assignAll(list);
@@ -137,9 +184,9 @@ class OrderDetailsController extends GetxController {
     capturedImages.assignAll(List.filled(maxImageCount, null));
   }
 
-  // ── STEP 2: Complete Order ─────────────────────────────────────────────────
-  // Pending compressions wait karo (usually 0ms if user took even 2-3 sec)
-  // Pachhi compressed files upload karo
+  // ============================================================
+  // Complete / Close order
+  // ============================================================
 
   Future<void> completeOrder() async {
     final originalImages = capturedImages.whereType<File>().toList();
@@ -155,13 +202,10 @@ class OrderDetailsController extends GetxController {
     FullScreenLoader.show(message: "Uploading photos...");
 
     try {
-      // Koi compression pending hoy to wait karo
-      // (mostly 0ms — user typically 2-3 sec lagave cho between photos)
       if (_compressionFutures.isNotEmpty) {
         await Future.wait(_compressionFutures.values);
       }
 
-      // Compressed version use karo, na hoy to original
       final List<File> uploadImages = [];
       for (int i = 0; i < maxImageCount; i++) {
         if (capturedImages[i] != null) {
@@ -171,8 +215,7 @@ class OrderDetailsController extends GetxController {
         }
       }
 
-      // Log sizes for debugging
-      print("📤 UPLOADING ${uploadImages.length} images:");
+      print("UPLOADING ${uploadImages.length} images:");
       uploadImages.asMap().forEach((i, f) {
         print("  Slot $i: ${(f.lengthSync() / 1024).toStringAsFixed(0)} KB");
       });
@@ -199,15 +242,16 @@ class OrderDetailsController extends GetxController {
           final double pendingAmount =
           (messageData['pending_amount'] ?? 0).toDouble();
 
-          Get.offAllNamed(Routes.DASHBOARD);
-          await Future.delayed(const Duration(milliseconds: 300));
-
           if (paymentPending) {
+            await fetchOrderDetails();
+            orderServiceCompleted(true);
             CustomSnackbar.showSuccess(
               "Service Completed",
-              "$mainMessage\nPending Amount : ₹$pendingAmount",
+              "$mainMessage\nPending Amount: ₹$pendingAmount",
             );
           } else {
+            Get.offAllNamed(Routes.DASHBOARD);
+            await Future.delayed(const Duration(milliseconds: 300));
             CustomSnackbar.showSuccess("Success", mainMessage);
           }
         } else {
@@ -237,11 +281,52 @@ class OrderDetailsController extends GetxController {
     } catch (e) {
       print("COMPLETE ORDER ERROR ::: $e");
       FullScreenLoader.hide();
-      CustomSnackbar.showError("Error", "Something went wrong. Please try again.");
+      CustomSnackbar.showError(
+          "Error", "Something went wrong. Please try again.");
     }
   }
 
-  // ── Order Details ─────────────────────────────────────────────────────────
+  Future<void> closeOrder() async {
+    FullScreenLoader.show(message: "Closing order...");
+
+    try {
+      final res = await CloseOrder.closeOrder(orderId);
+
+      print("CLOSE ORDER RESPONSE ::: $res");
+
+      FullScreenLoader.hide();
+
+      if (res['success'] == true) {
+        Get.offAllNamed(Routes.DASHBOARD);
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        final message = res['message'];
+        CustomSnackbar.showSuccess(
+          "Order Closed",
+          message is Map
+              ? message['message']?.toString() ?? "Order closed successfully"
+              : message?.toString() ?? "Order closed successfully",
+        );
+      } else {
+        final message = res['message'];
+        CustomSnackbar.showError(
+          "Error",
+          message is Map
+              ? message['message']?.toString() ?? "Failed to close order"
+              : message?.toString() ?? "Failed to close order",
+        );
+      }
+    } catch (e) {
+      print("CLOSE ORDER ERROR ::: $e");
+      FullScreenLoader.hide();
+      CustomSnackbar.showError(
+          "Error", "Something went wrong. Please try again.");
+    }
+  }
+
+  // ============================================================
+  // API calls
+  // ============================================================
 
   Future<void> fetchOrderDetails() async {
     try {
@@ -259,44 +344,61 @@ class OrderDetailsController extends GetxController {
   Future<void> checkOrderStatus() async {
     try {
       final res = await OrderStatus.workerOrderStatus(orderId);
+      print("ORDER STATUS ::: $res");
+
       if (res['success'] == true) {
         final otpVerified = res['message']?['otp_verified'] ?? false;
+        final orderStatus = res['message']?['order_status'] ?? '';
+        final serviceCompleted = orderStatus == 'service_completed';
+
+        if (orderStatus == 'closed' || orderStatus == 'cancelled') {
+          orderIsFinal(true);
+          isOtpVerified.value = otpVerified;
+          return;
+        }
+
         isOtpVerified.value = otpVerified;
+
+        if (serviceCompleted && isPaymentUnpaid) {
+          orderServiceCompleted(true);
+        }
       }
     } catch (e) {
       print("ORDER STATUS ERROR ::: $e");
     }
   }
 
-  // ── OTP ───────────────────────────────────────────────────────────────────
-
   Future<void> sendOtp() async {
     try {
+      FullScreenLoader.show(message: "Sending OTP...");
       final res = await SendOtp.verifyUserSendOtp(orderId);
       print("OTP RESPONSE ::: $res");
-
       if (res['success'] == true) {
         final message = res['message']['message'];
         final expiresIn = res['message']['expires_in'];
-
-        CustomSnackbar.showSuccess("Success", message ?? "OTP sent successfully");
-
+        FullScreenLoader.hide();
+        CustomSnackbar.showSuccess(
+            "Success", message ?? "OTP sent successfully");
         await AppStorage.saveOtpSession(
           orderId: orderId,
           expiresInSeconds: expiresIn,
         );
-
         startTimer(expiresIn);
+        // ── Reset sheet flag so it can open fresh ──
+        _otpSheetScheduled = false;
         showOtpField(true);
       } else {
+        FullScreenLoader.hide();
         CustomSnackbar.showError(
           "Error",
           res['message']?.toString() ?? "Failed to send OTP",
         );
       }
     } catch (e) {
+      FullScreenLoader.hide();
       print("SEND OTP ERROR ::: $e");
-      CustomSnackbar.showError("Error", "Something went wrong. Please try again.");
+      CustomSnackbar.showError(
+          "Error", "Something went wrong. Please try again.");
     }
   }
 
@@ -332,7 +434,8 @@ class OrderDetailsController extends GetxController {
       }
     } catch (e) {
       print("CONFIRM OTP ERROR ::: $e");
-      CustomSnackbar.showError("Error", "Something went wrong. Please try again.");
+      CustomSnackbar.showError(
+          "Error", "Something went wrong. Please try again.");
     }
   }
 
@@ -340,9 +443,14 @@ class OrderDetailsController extends GetxController {
     final active = await AppStorage.isOtpActive(orderId);
     if (active) {
       final seconds = await AppStorage.getOtpRemainingSeconds();
-      if (seconds != null) {
+      if (seconds != null && seconds > 0) {
         startTimer(seconds);
+        // ── Reset flag so fresh sheet can open ──
+        _otpSheetScheduled = false;
         showOtpField(true);
+      } else {
+        // Expired session — clean up
+        await AppStorage.clearOtpSession();
       }
     }
   }
@@ -366,18 +474,10 @@ class OrderDetailsController extends GetxController {
   void stopTimer() => _timer?.cancel();
 
   @override
-  void onInit() {
-    super.onInit();
-    print("CURRENT ORDER ID ::: $orderId");
-    fetchOrderDetails();
-    checkOrderStatus();
-    checkOtpStateOnLoad();
-  }
-
-  @override
   void onClose() {
     stopTimer();
     otpController.dispose();
+    _onOpenOtpSheet = null;
     super.onClose();
   }
 }

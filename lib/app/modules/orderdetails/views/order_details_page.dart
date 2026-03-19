@@ -88,7 +88,7 @@ class OrderDetailsPage extends StatelessWidget {
                   padding: EdgeInsets.only(bottom: rs(context, 90)),
                   child: Column(
                     children: [
-                      /// ================= HERO HEADER =================
+                      // ── Hero Header ─────────────────────────────────────
                       CustomContainer(
                         width: double.infinity,
                         padding: EdgeInsets.all(rs(context, 16)),
@@ -104,7 +104,8 @@ class OrderDetailsPage extends StatelessWidget {
                                 context,
                                 icon: Icons.schedule_rounded,
                                 label: "Time Slot",
-                                value: order.slotTime.split(' - ').first.trim(),
+                                value:
+                                order.slotTime.split(' - ').first.trim(),
                               ),
                             ),
                             SizedBox(width: rs(context, 10)),
@@ -123,8 +124,8 @@ class OrderDetailsPage extends StatelessWidget {
                       SizedBox(height: rs(context, 20)),
 
                       Padding(
-                        padding:
-                        EdgeInsets.symmetric(horizontal: rs(context, 16)),
+                        padding: EdgeInsets.symmetric(
+                            horizontal: rs(context, 16)),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -159,8 +160,70 @@ class OrderDetailsPage extends StatelessWidget {
                 ),
               ),
 
-              // ── Bottom Action Button ─────────────────────────────────────
               Obx(() {
+                if (controller.orderIsFinal.value) {
+                  final isCancelled = controller.finalOrderStatus == 'cancelled';
+                  return Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: CustomContainer(
+                      padding: EdgeInsets.all(rs(context, 16)),
+                      backgroundColor: AppColors.surface,
+                      borderRadius: AppRadii.button(context),
+                      child: CustomContainer(
+                        width: double.infinity,
+                        padding: EdgeInsets.symmetric(vertical: rs(context, 14)),
+                        backgroundColor: isCancelled
+                            ? AppColors.error.withOpacity(0.12)
+                            : AppColors.success.withOpacity(0.12),
+                        borderRadius: AppRadii.button(context),
+                        border: Border.all(
+                          color: isCancelled
+                              ? AppColors.error.withOpacity(0.4)
+                              : AppColors.success.withOpacity(0.4),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              isCancelled
+                                  ? Icons.cancel_outlined
+                                  : Icons.check_circle_outline_rounded,
+                              color: isCancelled ? AppColors.error : AppColors.success,
+                            ),
+                            SizedBox(width: rs(context, 8)),
+                            Text(
+                              isCancelled ? "Order Cancelled" : "Order Closed",
+                              style: AppTextStyles.buttonMedium(context).copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: isCancelled ? AppColors.error : AppColors.success,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                if (controller.orderServiceCompleted.value && controller.isPaymentUnpaid) {
+                  return Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: CustomContainer(
+                      padding: EdgeInsets.all(rs(context, 16)),
+                      backgroundColor: AppColors.surface,
+                      borderRadius: AppRadii.button(context),
+                      child: GestureDetector(
+                        onTap: () => controller.closeOrder(),
+                        child: _closeOrderButton(context),
+                      ),
+                    ),
+                  );
+                }
+
                 if (controller.isOtpVerified.value) {
                   return Positioned(
                     bottom: 0,
@@ -170,8 +233,8 @@ class OrderDetailsPage extends StatelessWidget {
                       padding: EdgeInsets.all(rs(context, 16)),
                       backgroundColor: AppColors.surface,
                       borderRadius: AppRadii.button(context),
-                      onTap: () => _showImageCaptureBottomSheet(
-                          context, controller),
+                      onTap: () =>
+                          _showImageCaptureBottomSheet(context, controller),
                       child: _actionButton(
                         context,
                         controller.allImagesCaptured
@@ -187,6 +250,7 @@ class OrderDetailsPage extends StatelessWidget {
                   );
                 }
 
+                // ── OTP sheet open — button hide ───────────────────────
                 if (controller.showOtpField.value) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!(Get.isBottomSheetOpen == true) &&
@@ -197,6 +261,7 @@ class OrderDetailsPage extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
 
+                // ── VERIFY USER button ─────────────────────────────────
                 return Positioned(
                   bottom: 0,
                   left: 0,
@@ -233,7 +298,34 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   // ============================================================
-  // ✅ NEW: 5-Image Capture Bottom Sheet
+  // Close Order Button — distinct style (warning/orange)
+  // ============================================================
+
+  Widget _closeOrderButton(BuildContext context) {
+    return CustomContainer(
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: rs(context, 14)),
+      backgroundColor: AppColors.warning.withOpacity(0.9),
+      borderRadius: AppRadii.button(context),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.lock_outline_rounded, color: AppColors.white),
+          SizedBox(width: rs(context, 8)),
+          Text(
+            "Close Order",
+            style: AppTextStyles.buttonMedium(context).copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.white,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ============================================================
+  // 5-Image Capture Bottom Sheet
   // ============================================================
 
   void _showImageCaptureBottomSheet(
@@ -266,7 +358,7 @@ class OrderDetailsPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // ── Handle ──────────────────────────────────────────
+                  // ── Handle ────────────────────────────────────────
                   Padding(
                     padding: EdgeInsets.only(top: rs(context, 12)),
                     child: CustomContainer(
@@ -274,11 +366,12 @@ class OrderDetailsPage extends StatelessWidget {
                       height: rs(context, 4),
                       backgroundColor:
                       AppColors.textSecondary.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(rs(context, 10)),
+                      borderRadius:
+                      BorderRadius.circular(rs(context, 10)),
                     ),
                   ),
 
-                  // ── Header ──────────────────────────────────────────
+                  // ── Header ────────────────────────────────────────
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       rs(context, 20),
@@ -290,7 +383,8 @@ class OrderDetailsPage extends StatelessWidget {
                       children: [
                         CustomContainer(
                           padding: EdgeInsets.all(rs(context, 10)),
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor:
+                          AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(100),
                           child: Icon(
                             Icons.photo_camera_rounded,
@@ -315,13 +409,13 @@ class OrderDetailsPage extends StatelessWidget {
                                 return Text(
                                   "$c of 5 photos captured",
                                   style: AppTextStyles.bodySmall(context)
-                                      .copyWith(color: AppColors.textSecondary),
+                                      .copyWith(
+                                      color: AppColors.textSecondary),
                                 );
                               }),
                             ],
                           ),
                         ),
-                        // Progress badge — reads .capturedImages directly
                         Obx(() {
                           final count = controller.capturedImages
                               .where((f) => f != null)
@@ -332,7 +426,7 @@ class OrderDetailsPage extends StatelessWidget {
                     ),
                   ),
 
-                  // ── Progress Bar ─────────────────────────────────────
+                  // ── Progress Bar ───────────────────────────────────
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: rs(context, 20),
@@ -346,7 +440,7 @@ class OrderDetailsPage extends StatelessWidget {
                     }),
                   ),
 
-                  // ── 5-Slot Grid — NO outer Obx; each slot has its own Obx
+                  // ── Image Grid ────────────────────────────────────
                   Flexible(
                     child: SingleChildScrollView(
                       controller: scrollController,
@@ -356,11 +450,12 @@ class OrderDetailsPage extends StatelessWidget {
                         rs(context, 16),
                         rs(context, 16),
                       ),
-                      child: _buildImageGrid(context, controller, sheetContext),
+                      child: _buildImageGrid(
+                          context, controller, sheetContext),
                     ),
                   ),
 
-                  // ── Bottom Action — reads .capturedImages inside widget
+                  // ── Bottom Bar ────────────────────────────────────
                   _buildSheetBottomBar(context, controller, sheetContext),
                 ],
               ),
@@ -411,7 +506,6 @@ class OrderDetailsPage extends StatelessWidget {
       OrderDetailsController controller,
       BuildContext sheetContext,
       ) {
-    // Layout: 2 cols top row, 3 cols bottom row (total 5) — unique asymmetric grid
     return Column(
       children: [
         // Top row: slots 0, 1 (2 large tiles)
@@ -440,7 +534,7 @@ class OrderDetailsPage extends StatelessWidget {
 
         SizedBox(height: rs(context, 8)),
 
-        // Hint row
+        // Hint
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -499,13 +593,9 @@ class OrderDetailsPage extends StatelessWidget {
                 ? Stack(
               fit: StackFit.expand,
               children: [
-                // ── Captured image ─────────────────────────
-                Image.file(
-                  file,
-                  fit: BoxFit.cover,
-                ),
+                Image.file(file, fit: BoxFit.cover),
 
-                // ── Dark gradient overlay (bottom) ──────────
+                // Dark gradient overlay
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -525,7 +615,7 @@ class OrderDetailsPage extends StatelessWidget {
                   ),
                 ),
 
-                // ── Success tick (top-left) ─────────────────
+                // Success tick (top-left)
                 Positioned(
                   top: rs(context, 7),
                   left: rs(context, 7),
@@ -543,12 +633,13 @@ class OrderDetailsPage extends StatelessWidget {
                   ),
                 ),
 
-                // ── Retake icon (top-right) ─────────────────
+                // Delete icon (top-right)
                 Positioned(
                   top: rs(context, 7),
                   right: rs(context, 7),
                   child: GestureDetector(
-                    onTap: () => controller.deleteImageAtSlot(index),
+                    onTap: () =>
+                        controller.deleteImageAtSlot(index),
                     child: Container(
                       padding: EdgeInsets.all(rs(context, 5)),
                       decoration: BoxDecoration(
@@ -564,13 +655,14 @@ class OrderDetailsPage extends StatelessWidget {
                   ),
                 ),
 
-                // ── Photo number label (bottom-left) ────────
+                // Photo label (bottom-left)
                 Positioned(
                   bottom: rs(context, 6),
                   left: rs(context, 8),
                   child: Text(
                     "Photo ${index + 1}",
-                    style: AppTextStyles.bodySmall(context).copyWith(
+                    style:
+                    AppTextStyles.bodySmall(context).copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: rs(context, 11),
@@ -582,7 +674,6 @@ class OrderDetailsPage extends StatelessWidget {
                 : Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // ── Camera icon ──────────────────────────────
                 Container(
                   padding: EdgeInsets.all(rs(context, 10)),
                   decoration: BoxDecoration(
@@ -638,21 +729,20 @@ class OrderDetailsPage extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // ── Retake All / Cancel ────────────────────────────────
+            // Retake All button
             if (count > 0)
               Padding(
                 padding: EdgeInsets.only(right: rs(context, 10)),
                 child: GestureDetector(
-                  onTap: () {
-                    controller.clearAllImages();
-                  },
+                  onTap: () => controller.clearAllImages(),
                   child: CustomContainer(
                     padding: EdgeInsets.symmetric(
                       horizontal: rs(context, 14),
                       vertical: rs(context, 14),
                     ),
                     backgroundColor: AppColors.error.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(rs(context, 14)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 14)),
                     border: Border.all(
                       color: AppColors.error.withOpacity(0.25),
                     ),
@@ -665,10 +755,11 @@ class OrderDetailsPage extends StatelessWidget {
                 ),
               ),
 
-            // ── Main CTA ──────────────────────────────────────────
+            // Main CTA
             Expanded(
               child: GestureDetector(
-                onTap: (allDone || count >= OrderDetailsController.minImageCount)
+                onTap: (allDone ||
+                    count >= OrderDetailsController.minImageCount)
                     ? () async {
                   Navigator.of(sheetContext).pop();
                   await controller.completeOrder();
@@ -678,14 +769,15 @@ class OrderDetailsPage extends StatelessWidget {
                     : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
-                  padding: EdgeInsets.symmetric(vertical: rs(context, 15)),
+                  padding:
+                  EdgeInsets.symmetric(vertical: rs(context, 15)),
                   decoration: BoxDecoration(
                     color: allDone
                         ? AppColors.success.withOpacity(0.9)
                         : AppColors.secondary.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(rs(context, 16)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 16)),
                   ),
-                  // 👇 isLoading check REMOVED — FullScreenLoader covers the whole screen
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -698,10 +790,13 @@ class OrderDetailsPage extends StatelessWidget {
                       ),
                       SizedBox(width: rs(context, 8)),
                       Text(
-                        allDone || count >= OrderDetailsController.minImageCount
+                        allDone ||
+                            count >=
+                                OrderDetailsController.minImageCount
                             ? "Complete Order"
                             : "Capture Photo ${count + 1}",
-                        style: AppTextStyles.buttonMedium(context).copyWith(
+                        style:
+                        AppTextStyles.buttonMedium(context).copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                         ),
@@ -718,13 +813,14 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   // ============================================================
-  // OTP Bottom Sheet (unchanged)
+  // OTP Bottom Sheet
   // ============================================================
 
   void _showOtpBottomSheet(
       BuildContext context,
       OrderDetailsController controller,
       ) {
+    print("OTP BOTTOM SHEET SHOW");
     if (Get.isBottomSheetOpen == true) return;
 
     final RxList<String> digits = <String>[].obs;
@@ -792,7 +888,8 @@ class OrderDetailsPage extends StatelessWidget {
                     children: [
                       CustomContainer(
                         padding: EdgeInsets.all(rs(context, 10)),
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor:
+                        AppColors.primary.withOpacity(0.1),
                         borderRadius:
                         BorderRadius.circular(rs(context, 100)),
                         child: Icon(
@@ -868,8 +965,8 @@ class OrderDetailsPage extends StatelessWidget {
                                 : isActive
                                 ? AppColors.primary.withOpacity(0.04)
                                 : AppColors.white,
-                            borderRadius: BorderRadius.circular(
-                                rs(context, 10)),
+                            borderRadius:
+                            BorderRadius.circular(rs(context, 10)),
                             border: Border.all(
                               color: filled
                                   ? AppColors.primary
@@ -882,12 +979,12 @@ class OrderDetailsPage extends StatelessWidget {
                           ),
                           child: Center(
                             child: filled
-                                ? CustomContainer(
-                              width: rs(context, 12),
-                              height: rs(context, 12),
-                              backgroundColor: AppColors.primary,
-                              borderRadius: BorderRadius.circular(
-                                  rs(context, 12)),
+                                ? Text(
+                              digits[i],
+                              style: AppTextStyles.heading4(context).copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
                             )
                                 : isActive
                                 ? CustomContainer(
@@ -903,7 +1000,8 @@ class OrderDetailsPage extends StatelessWidget {
                     );
                   }),
                   SizedBox(height: rs(context, 20)),
-                  _buildNumberPad(context, digits, controller, sheetContext),
+                  _buildNumberPad(
+                      context, digits, controller, sheetContext),
                 ],
               ),
             );
@@ -996,8 +1094,7 @@ class OrderDetailsPage extends StatelessWidget {
                             ? null
                             : [
                           BoxShadow(
-                            color:
-                            Colors.black.withOpacity(0.04),
+                            color: Colors.black.withOpacity(0.04),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
@@ -1084,26 +1181,27 @@ class OrderDetailsPage extends StatelessWidget {
     final color = isPaid ? AppColors.success : AppColors.warning;
     return CustomContainer(
       padding: EdgeInsets.all(rs(context, 12)),
-      backgroundColor: color.withOpacity(0.12),
+      backgroundColor: AppColors.error.withOpacity(0.12),
       borderRadius: AppRadii.card(context),
-      border: Border.all(color: color.withOpacity(0.3)),
+      border: Border.all(color: AppColors.error.withOpacity(0.3)),
       child: Row(
         children: [
           _iconChip(
             context,
             icon: isPaid ? Icons.check_circle : Icons.payments,
-            color: color,
+            color: AppColors.error,
           ),
           SizedBox(width: rs(context, 12)),
           Text(
-            isPaid ? "Paid Online" : "Collect Cash",
+            isPaid ? "Paid" : "Unpaid",
             style: AppTextStyles.bodyMedium(context)
                 .copyWith(fontWeight: FontWeight.w600),
           ),
           const Spacer(),
           Text(
             "₹${order.totalAmount}",
-            style: AppTextStyles.heading4(context).copyWith(color: color),
+            style:
+            AppTextStyles.heading4(context).copyWith(color: AppColors.error),
           ),
         ],
       ),
@@ -1140,7 +1238,8 @@ class OrderDetailsPage extends StatelessWidget {
                       SizedBox(height: rs(context, 4)),
                       Text(
                         phoneText,
-                        style: AppTextStyles.bodyMedium(context).copyWith(
+                        style:
+                        AppTextStyles.bodyMedium(context).copyWith(
                           fontWeight: FontWeight.w600,
                           color: canCall
                               ? AppColors.textPrimary
@@ -1253,8 +1352,7 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _actionButton(
-      BuildContext context, IconData icon, String text) {
+  Widget _actionButton(BuildContext context, IconData icon, String text) {
     return CustomContainer(
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: rs(context, 14)),

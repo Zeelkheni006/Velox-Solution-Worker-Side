@@ -158,18 +158,14 @@ class OrderListItem extends StatelessWidget {
                     horizontal: rs(context, 8),
                     vertical: rs(context, 8),
                   ),
-                  backgroundColor: paymentColor.withOpacity(0.1),
+                  backgroundColor: AppColors.error.withOpacity(0.1),
                   borderRadius: BorderRadius.all(AppRadii.sm(context)),
                   child: Row(
                     children: [
-                      Icon(paymentIcon,
-                          size: rs(context, 18),
-                          color: paymentColor),
-                      SizedBox(width: rs(context, 6)),
                       Text(
-                        isPaid ? "Online Paid" : "Collect Cash",
+                        isPaid ? "Paid" : "Unpaid",
                         style: AppTextStyles.bodySmall(context).copyWith(
-                          color: paymentColor,
+                          color: AppColors.error,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
