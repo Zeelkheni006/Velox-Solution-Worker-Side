@@ -51,6 +51,11 @@ class OtpverifyscreenView extends GetView<OtpverifyscreenController> {
 
               SizedBox(height: rs(context, 16)),
 
+              // RESEND WIDGET
+              _buildResendWidget(context),
+
+              SizedBox(height: rs(context, 24)),
+
               // VERIFY BUTTON
               _buildVerifyButton(context),
 
@@ -153,7 +158,7 @@ class OtpverifyscreenView extends GetView<OtpverifyscreenController> {
               textAlign: TextAlign.center,
               keyboardType: TextInputType.number,
               maxLength: 1,
-              obscureText: false,
+              cursorColor: AppColors.primary,
               style: AppTextStyles.heading3(context).copyWith(
                 color: AppColors.primary,
                 fontWeight: FontWeight.w800,
@@ -168,6 +173,54 @@ class OtpverifyscreenView extends GetView<OtpverifyscreenController> {
               onTap: () => controller.focusedIndex.value = index,
             ),
           ],
+        ),
+      );
+    });
+  }
+
+  // ==================== RESEND OTP ====================
+  Widget _buildResendWidget(BuildContext context) {
+    return Obx(() {
+      if (controller.isResending.value) {
+        return Center(
+          child: SizedBox(
+            height: rs(context, 20),
+            width: rs(context, 20),
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primary,
+            ),
+          ),
+        );
+      }
+
+      return GestureDetector(
+        onTap: controller.canResend.value ? controller.resendOtp : null,
+        child: Center(
+          child: RichText(
+            text: TextSpan(
+              style: AppTextStyles.bodySmall(context),
+              children: [
+                TextSpan(
+                  text: "Didn't receive code? ",
+                  style: TextStyle(color: AppColors.textSecondary),
+                ),
+                TextSpan(
+                  text: controller.canResend.value
+                      ? 'Resend'
+                      : 'Resend in ${controller.timerDisplay}',
+                  style: TextStyle(
+                    color: controller.canResend.value
+                        ? AppColors.primary
+                        : AppColors.grey,
+                    fontWeight: controller.canResend.value
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       );
     });

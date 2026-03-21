@@ -84,4 +84,21 @@ class ApiAuth {
       return {"success": false, "message": "Server error"};
     }
   }
+
+  // RESEND WORKER LOGIN OTP //
+  static Future<Map<String, dynamic>> resendWorkerLoginOtp({
+    required String endpoint,
+    required Map<String, dynamic> body,
+  }) async {
+    final response = await http.post(
+      Uri.parse(ApiUrl.baseUrl + endpoint),
+      headers: {
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+      },
+      body: jsonEncode(body),
+    );
+    return jsonDecode(response.body);
+  }
+
 }

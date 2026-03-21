@@ -17,6 +17,9 @@ class ApiUrl {
   static const String LoginOtp = "/api/v1/worker/auth/login/through/otp";
   static const String LoginOtpVerify = "/api/v1/worker/auth/login/through/otp/verify";
 
+  // RESEND OTP //
+  static const String loginresendotp = "/api/v1/worker/auth/login/through/otp/resend";
+
   // TODAY-UPCOMING-HISTORY ORDER //
   static const String todayorders = "/api/v1/worker/dashboard/orders/today";
   static const String upcomingorders = "/api/v1/worker/dashboard/orders/upcoming";

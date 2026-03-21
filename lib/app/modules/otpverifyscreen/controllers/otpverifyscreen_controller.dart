@@ -15,21 +15,22 @@ class OtpverifyscreenController extends GetxController {
 
   final List<TextEditingController> otpControllers =
   List.generate(6, (_) => TextEditingController());
-
   final List<FocusNode> focusNodes = List.generate(6, (_) => FocusNode());
 
   final RxList<String> otpValues = List.filled(6, '').obs;
   final focusedIndex = 0.obs;
 
-  // ── State ─────────────────────────────────────────────────
+  // ── State ──────────────────────────────────────────────────────────────────
   final isLoading = false.obs;
   final isOtpComplete = false.obs;
 
-  // ── Resend timer ──────────────────────────────────────────
-  final resendSeconds = 30.obs;
-  Timer? _resendTimer;
+  // ── Resend Timer ───────────────────────────────────────────────────────────
+  final timer = 60.obs;
+  final canResend = false.obs;
+  final isResending = false.obs;
+  Timer? _countdownTimer;
 
-  // ─────────────────────────────────────────────────────────
+  // ── Init ───────────────────────────────────────────────────────────────────
   @override
   void onInit() {
     super.onInit();
@@ -48,8 +49,36 @@ class OtpverifyscreenController extends GetxController {
         }
       });
     }
+
+    startTimer();
   }
 
+  // ── Timer ──────────────────────────────────────────────────────────────────
+  void startTimer() {
+    timer.value = 60;
+    canResend.value = false;
+
+    _countdownTimer?.cancel();
+    _countdownTimer = Timer.periodic(
+      const Duration(seconds: 1),
+          (t) {
+        if (timer.value == 0) {
+          canResend.value = true;
+          t.cancel();
+        } else {
+          timer.value--;
+        }
+      },
+    );
+  }
+
+  String get timerDisplay {
+    final minutes = (timer.value ~/ 60).toString().padLeft(2, '0');
+    final seconds = (timer.value % 60).toString().padLeft(2, '0');
+    return '$minutes:$seconds';
+  }
+
+  // ── OTP Input ──────────────────────────────────────────────────────────────
   void onOtpChanged(String value, int index) {
     if (value.isEmpty) {
       otpValues[index] = '';
@@ -76,11 +105,61 @@ class OtpverifyscreenController extends GetxController {
 
   String get _fullOtp => otpValues.join();
 
+  // ── Resend OTP ─────────────────────────────────────────────────────────────
+  Future<void> resendOtp() async {
+    if (!canResend.value || isResending.value) return;
+
+    try {
+      isResending.value = true;
+
+      final response = await ApiAuth.resendWorkerLoginOtp(
+        endpoint: ApiUrl.loginresendotp,
+        body: {
+          "credential": credential,
+        },
+      );
+
+      debugPrint("WORKER RESEND OTP RESPONSE ::: $response");
+
+      if (response['success'] == true) {
+        // OTP field clear
+        for (int i = 0; i < 6; i++) {
+          otpControllers[i].clear();
+          otpValues[i] = '';
+        }
+        isOtpComplete.value = false;
+
+        // Message extract — nested map handle
+        final messageMap = response['message'];
+        final displayMessage = messageMap is Map
+            ? messageMap['message']?.toString() ?? "OTP sent successfully"
+            : messageMap?.toString() ?? "OTP sent successfully";
+
+        CustomSnackbar.showSuccess("OTP Resent", displayMessage);
+        startTimer();
+
+      } else {
+        final messageMap = response['message'];
+        final errorMessage = messageMap is String
+            ? messageMap
+            : "Failed to resend OTP";
+
+        CustomSnackbar.showError("Resend Failed", errorMessage);
+      }
+    } catch (e) {
+      debugPrint("WORKER RESEND OTP ERROR ::: $e");
+      CustomSnackbar.showError("Error", "Something went wrong. Please try again");
+    } finally {
+      isResending.value = false;
+    }
+  }
+
+  // ── Verify OTP ─────────────────────────────────────────────────────────────
   Future<void> verifyOtp() async {
     try {
       if (!isOtpComplete.value) return;
 
-      FullScreenLoader.show();
+      FullScreenLoader.show(message: "Verifying OTP...");
 
       if (!DeviceInfoService.isReady) {
         await DeviceInfoService.fetchDeviceInfo();
@@ -100,7 +179,7 @@ class OtpverifyscreenController extends GetxController {
 
       FullScreenLoader.hide();
 
-      print("OTP VERIFY RESPONSE ::: ${response}");
+      debugPrint("OTP VERIFY RESPONSE ::: $response");
 
       if (response['success'] == true) {
         final data = response['data'] ?? {};
@@ -117,6 +196,7 @@ class OtpverifyscreenController extends GetxController {
       }
 
       _handleError(response);
+
     } catch (e, stack) {
       FullScreenLoader.hide();
       debugPrint("OTP VERIFY ERROR ::: $e");
@@ -141,15 +221,12 @@ class OtpverifyscreenController extends GetxController {
     CustomSnackbar.showError("Failed", errorMessage);
   }
 
+  // ── Dispose ────────────────────────────────────────────────────────────────
   @override
   void onClose() {
-    _resendTimer?.cancel();
-    for (final c in otpControllers) {
-      c.dispose();
-    }
-    for (final f in focusNodes) {
-      f.dispose();
-    }
+    _countdownTimer?.cancel();
+    for (final c in otpControllers) c.dispose();
+    for (final f in focusNodes) f.dispose();
     super.onClose();
   }
 }
