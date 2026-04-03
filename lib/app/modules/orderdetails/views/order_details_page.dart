@@ -7,6 +7,7 @@ import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/app_responsive.dart';
 import '../../../../core/utils/custom_container.dart';
 import '../../../../core/utils/custome_snakbar.dart';
+import '../../../../core/utils/map_navigation_page.dart';
 import '../controllers/order_details_controller.dart';
 
 class OrderDetailsPage extends StatelessWidget {
@@ -1282,6 +1283,76 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
+  // Widget _locationCard(
+  //     BuildContext context,
+  //     String addressText,
+  //     bool canNavigate,
+  //     address,
+  //     ) {
+  //   return CustomContainer(
+  //     backgroundColor: AppColors.white,
+  //     borderRadius: AppRadii.card(context),
+  //     border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+  //     child: Column(
+  //       children: [
+  //         Padding(
+  //           padding: EdgeInsets.all(rs(context, 14)),
+  //           child: Row(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               _iconChip(context, icon: Icons.location_on_rounded),
+  //               SizedBox(width: rs(context, 12)),
+  //               Expanded(
+  //                 child: Text(
+  //                   addressText,
+  //                   style: AppTextStyles.bodyMedium(context).copyWith(
+  //                     fontWeight: FontWeight.w600,
+  //                     color: canNavigate
+  //                         ? AppColors.textPrimary
+  //                         : AppColors.textSecondary,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         const Divider(height: 1),
+  //         Padding(
+  //           padding: EdgeInsets.all(rs(context, 14)),
+  //           child: InkWell(
+  //             onTap: canNavigate
+  //                 ? () async {
+  //               final uri = Uri.parse(
+  //                 "https://www.google.com/maps/dir/?api=1"
+  //                     "&origin=Current+Location"
+  //                     "&destination=${address.latitude},${address.longitude}"
+  //                     "&travelmode=driving",
+  //               );
+  //               if (!await launchUrl(uri,
+  //                   mode: LaunchMode.externalApplication)) {
+  //                 CustomSnackbar.showError(
+  //                     "Error", "Could not open Google Maps");
+  //               }
+  //             }
+  //                 : null,
+  //             borderRadius: AppRadii.button(context),
+  //             child: Opacity(
+  //               opacity: canNavigate ? 1 : 0.5,
+  //               child: _actionButton(
+  //                 context,
+  //                 Icons.navigation,
+  //                 canNavigate
+  //                     ? "Start Navigation"
+  //                     : "Address available later",
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   Widget _locationCard(
       BuildContext context,
       String addressText,
@@ -1320,18 +1391,18 @@ class OrderDetailsPage extends StatelessWidget {
             padding: EdgeInsets.all(rs(context, 14)),
             child: InkWell(
               onTap: canNavigate
-                  ? () async {
-                final uri = Uri.parse(
-                  "https://www.google.com/maps/dir/?api=1"
-                      "&origin=Current+Location"
-                      "&destination=${address.latitude},${address.longitude}"
-                      "&travelmode=driving",
+                  ? () {
+                // ✅ In-app navigation — no Google Maps app needed
+                Get.to(
+                      () => NavigationPage(
+                    destinationLat: address.latitude!,
+                    destinationLng: address.longitude!,
+                    destinationName:
+                    address.formattedAddress ?? "Customer Location",
+                  ),
+                  transition: Transition.downToUp,
+                  duration: const Duration(milliseconds: 400),
                 );
-                if (!await launchUrl(uri,
-                    mode: LaunchMode.externalApplication)) {
-                  CustomSnackbar.showError(
-                      "Error", "Could not open Google Maps");
-                }
               }
                   : null,
               borderRadius: AppRadii.button(context),
