@@ -53,7 +53,12 @@ class ApiUrl {
   static const String ordercomplete = "/api/v1/worker/dashboard/orders/complete";
 
   // RESCHEDULE SLOTS //
-  static const String rescheduleslots = "/api/v1/worker/dashboard/orders/reschedule/available-slots?order_id={{CURRENT ORDER ID ::: XXX}}";
   static const String slotconfirm = "/api/v1/worker/dashboard/orders/reschedule/confirm";
+
+  // ADDON ITEM //
+  static const String addonItemSearch = "/api/v1/worker/dashboard/orders/addon-items";
+  static const String addonAdd = "/api/v1/worker/dashboard/orders/addon-items/add";
+  static const String addonRemove = "/api/v1/worker/dashboard/orders/addon-items/remove";
+  static String addonItemShow(int orderId) => "/api/v1/worker/dashboard/orders/addon-items/$orderId";
 
 }

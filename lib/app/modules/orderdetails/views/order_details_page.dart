@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../../../core/api/Api_Service/Addon_Item/addon_item_model.dart';
+import '../../../../core/constants/app_assets.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_text_styles.dart';
@@ -87,10 +89,10 @@ class OrderDetailsPage extends StatelessWidget {
             children: [
               SingleChildScrollView(
                 child: Padding(
-                  padding: EdgeInsets.only(bottom: rs(context, 90)),
+                  padding: EdgeInsets.only(bottom: rs(context, 110)),
                   child: Column(
                     children: [
-                      // ── Hero Header ─────────────────────────────────────
+                      // ── Hero Header ──────────────────────────────────────
                       CustomContainer(
                         width: double.infinity,
                         padding: EdgeInsets.all(rs(context, 16)),
@@ -106,8 +108,10 @@ class OrderDetailsPage extends StatelessWidget {
                                 context,
                                 icon: Icons.schedule_rounded,
                                 label: "Time Slot",
-                                value:
-                                order.slotTime.split(' - ').first.trim(),
+                                value: order.slotTime
+                                    .split(' - ')
+                                    .first
+                                    .trim(),
                               ),
                             ),
                             SizedBox(width: rs(context, 10)),
@@ -153,7 +157,24 @@ class OrderDetailsPage extends StatelessWidget {
                               child: _locationCard(
                                   context, addressText, canNavigate, address),
                             ),
-                            SizedBox(height: rs(context, 60)),
+
+                            // ── Addon Module — only after OTP verified ───
+                            Obx(() {
+                              if (!controller.isOtpVerified.value) {
+                                return const SizedBox.shrink();
+                              }
+                              if (controller.orderIsFinal.value) {
+                                return const SizedBox.shrink();
+                              }
+                              return Column(
+                                children: [
+                                  SizedBox(height: rs(context, 20)),
+                                  _addonSection(context, controller),
+                                ],
+                              );
+                            }),
+
+                            SizedBox(height: rs(context, 300)),
                           ],
                         ),
                       ),
@@ -162,9 +183,11 @@ class OrderDetailsPage extends StatelessWidget {
                 ),
               ),
 
+              // ── Floating Bottom Bar ──────────────────────────────────────
               Obx(() {
                 if (controller.orderIsFinal.value) {
-                  final isCancelled = controller.finalOrderStatus == 'cancelled';
+                  final isCancelled =
+                      controller.finalOrderStatus == 'cancelled';
                   return Positioned(
                     bottom: 0,
                     left: 0,
@@ -175,7 +198,8 @@ class OrderDetailsPage extends StatelessWidget {
                       borderRadius: AppRadii.button(context),
                       child: CustomContainer(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(vertical: rs(context, 14)),
+                        padding: EdgeInsets.symmetric(
+                            vertical: rs(context, 14)),
                         backgroundColor: isCancelled
                             ? AppColors.error.withOpacity(0.12)
                             : AppColors.success.withOpacity(0.12),
@@ -192,14 +216,21 @@ class OrderDetailsPage extends StatelessWidget {
                               isCancelled
                                   ? Icons.cancel_outlined
                                   : Icons.check_circle_outline_rounded,
-                              color: isCancelled ? AppColors.error : AppColors.success,
+                              color: isCancelled
+                                  ? AppColors.error
+                                  : AppColors.success,
                             ),
                             SizedBox(width: rs(context, 8)),
                             Text(
-                              isCancelled ? "Order Cancelled" : "Order Closed",
-                              style: AppTextStyles.buttonMedium(context).copyWith(
+                              isCancelled
+                                  ? "Order Cancelled"
+                                  : "Order Closed",
+                              style: AppTextStyles.buttonMedium(context)
+                                  .copyWith(
                                 fontWeight: FontWeight.w700,
-                                color: isCancelled ? AppColors.error : AppColors.success,
+                                color: isCancelled
+                                    ? AppColors.error
+                                    : AppColors.success,
                               ),
                             ),
                           ],
@@ -209,7 +240,8 @@ class OrderDetailsPage extends StatelessWidget {
                   );
                 }
 
-                if (controller.orderServiceCompleted.value && controller.isPaymentUnpaid) {
+                if (controller.orderServiceCompleted.value &&
+                    controller.isPaymentUnpaid) {
                   return Positioned(
                     bottom: 0,
                     left: 0,
@@ -243,9 +275,10 @@ class OrderDetailsPage extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // ── Primary: Capture photos / Complete order ──────────────
+                          // ── Primary: Capture photos / Complete order ───
                           GestureDetector(
-                            onTap: () => _showImageCaptureBottomSheet(context, controller),
+                            onTap: () => _showImageCaptureBottomSheet(
+                                context, controller),
                             child: _actionButton(
                               context,
                               controller.allImagesCaptured
@@ -261,21 +294,24 @@ class OrderDetailsPage extends StatelessWidget {
 
                           SizedBox(height: rs(context, 10)),
 
-                          // ── Secondary: Reschedule (optional) ─────────────────────
+                          // ── Secondary: Reschedule ──────────────────────
                           GestureDetector(
-                            onTap: () =>
-                                RescheduleBottomSheet.show(context, controller: controller),
+                            onTap: () => RescheduleBottomSheet.show(context,
+                                controller: controller),
                             child: CustomContainer(
                               width: double.infinity,
-                              padding: EdgeInsets.symmetric(vertical: rs(context, 13)),
+                              padding: EdgeInsets.symmetric(
+                                  vertical: rs(context, 13)),
                               backgroundColor: Colors.transparent,
                               borderRadius: AppRadii.button(context),
                               border: Border.all(
-                                color: AppColors.warning.withOpacity(0.55),
+                                color:
+                                AppColors.warning.withOpacity(0.55),
                                 width: 1.5,
                               ),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisAlignment:
+                                MainAxisAlignment.center,
                                 children: [
                                   Icon(
                                     Icons.event_repeat_rounded,
@@ -285,7 +321,9 @@ class OrderDetailsPage extends StatelessWidget {
                                   SizedBox(width: rs(context, 8)),
                                   Text(
                                     "Reschedule Order",
-                                    style: AppTextStyles.buttonMedium(context).copyWith(
+                                    style: AppTextStyles.buttonMedium(
+                                        context)
+                                        .copyWith(
                                       fontWeight: FontWeight.w600,
                                       color: AppColors.warning,
                                     ),
@@ -300,7 +338,7 @@ class OrderDetailsPage extends StatelessWidget {
                   );
                 }
 
-                // ── OTP sheet open — button hide ───────────────────────
+                // ── OTP sheet open — hide button ───────────────────────
                 if (controller.showOtpField.value) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!(Get.isBottomSheetOpen == true) &&
@@ -347,9 +385,574 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  // ============================================================
-  // Close Order Button — distinct style (warning/orange)
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
+  // ADDON SECTION  — search + add + current list with remove
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Widget _addonSection(
+      BuildContext context, OrderDetailsController orderCtrl) {
+    final addonCtrl = Get.put(
+      AddonController(orderId),
+      tag: 'addon_$orderId',
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Tappable Section header ───────────────────────────────────────
+        GestureDetector(
+          onTap: () => addonCtrl.isAddonExpanded.toggle(),
+          child: CustomContainer(
+            padding: EdgeInsets.symmetric(
+              horizontal: rs(context, 14),
+              vertical: rs(context, 12),
+            ),
+            backgroundColor: AppColors.white,
+            borderRadius: AppRadii.card(context),
+            border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+            child: Obx(() => Row(
+              children: [
+                _iconChip(context,
+                    icon: Icons.build_circle_rounded,
+                    color: AppColors.primary),
+                SizedBox(width: rs(context, 10)),
+                Text(
+                  "Addon Parts",
+                  style: AppTextStyles.bodyLarge(context)
+                      .copyWith(fontWeight: FontWeight.bold),
+                ),
+                const Spacer(),
+                // Addon total badge
+                if (addonCtrl.addonTotal.value > 0) ...[
+                  CustomContainer(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rs(context, 10),
+                      vertical: rs(context, 4),
+                    ),
+                    backgroundColor: AppColors.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(rs(context, 20)),
+                    child: Text(
+                      "₹${addonCtrl.addonTotal.value.toStringAsFixed(0)}",
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        color: AppColors.primary,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: rs(context, 8)),
+                ],
+                // Count badge when collapsed
+                if (!addonCtrl.isAddonExpanded.value &&
+                    addonCtrl.orderAddons.isNotEmpty) ...[
+                  CustomContainer(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rs(context, 8),
+                      vertical: rs(context, 4),
+                    ),
+                    backgroundColor: AppColors.success.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(rs(context, 20)),
+                    child: Text(
+                      "${addonCtrl.orderAddons.length} added",
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: rs(context, 8)),
+                ],
+                // Chevron
+                AnimatedRotation(
+                  turns: addonCtrl.isAddonExpanded.value ? 0.5 : 0.0,
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  child: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    color: AppColors.primary,
+                    size: rs(context, 22),
+                  ),
+                ),
+              ],
+            )),
+          ),
+        ),
+
+        // ── Animated collapsible body ────────────────────────────────────
+        Obx(() => AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: addonCtrl.isAddonExpanded.value
+              ? Column(
+            children: [
+              SizedBox(height: rs(context, 10)),
+
+              // ── Search bar ────────────────────────────────────
+              _addonSearchBar(context, addonCtrl),
+              SizedBox(height: rs(context, 10)),
+
+              // ── Search results / all-items list ───────────────
+              Obx(() {
+                if (addonCtrl.isSearching.value) {
+                  return _centeredLoader(context);
+                }
+                if (addonCtrl.isLoadingAll.value) {
+                  return _centeredLoader(context);
+                }
+                if (addonCtrl.searchResults.isNotEmpty) {
+                  return _searchResultsList(context, addonCtrl);
+                }
+                if (addonCtrl.searchQuery.value.isNotEmpty &&
+                    !addonCtrl.isSearching.value &&
+                    addonCtrl.searchResults.isEmpty) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                        vertical: rs(context, 10)),
+                    child: Center(
+                      child: Text(
+                        "No parts found for '${addonCtrl.searchQuery.value}'",
+                        style: AppTextStyles.bodySmall(context)
+                            .copyWith(
+                            color: AppColors.textSecondary),
+                      ),
+                    ),
+                  );
+                }
+                return const SizedBox.shrink();
+              }),
+
+              SizedBox(height: rs(context, 10)),
+
+              // ── Current order addons ──────────────────────────
+              Obx(() {
+                if (addonCtrl.isLoadingAddons.value) {
+                  return Padding(
+                    padding: EdgeInsets.symmetric(
+                        vertical: rs(context, 14)),
+                    child: Center(
+                      child: CircularProgressIndicator(
+                          color: AppColors.primary),
+                    ),
+                  );
+                }
+                if (addonCtrl.orderAddons.isEmpty) {
+                  return CustomContainer(
+                    width: double.infinity,
+                    padding: EdgeInsets.all(rs(context, 16)),
+                    backgroundColor:
+                    AppColors.textSecondary.withOpacity(0.05),
+                    borderRadius: AppRadii.card(context),
+                    border: Border.all(
+                        color: AppColors.textSecondary
+                            .withOpacity(0.12)),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.inventory_2_outlined,
+                          color: AppColors.textSecondary
+                              .withOpacity(0.4),
+                          size: rs(context, 32),
+                        ),
+                        SizedBox(height: rs(context, 8)),
+                        Text(
+                          "No addon parts added yet",
+                          style: AppTextStyles.bodySmall(context)
+                              .copyWith(
+                              color: AppColors.textSecondary
+                                  .withOpacity(0.6)),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return _orderAddonsList(context, addonCtrl);
+              }),
+            ],
+          )
+              : const SizedBox(width: double.infinity, height: 0),
+        )),
+      ],
+    );
+  }
+
+  // ── Tiny helper ──────────────────────────────────────────────────────────
+
+  Widget _centeredLoader(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: rs(context, 12)),
+      child: Center(
+        child: SizedBox(
+          width: rs(context, 22),
+          height: rs(context, 22),
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Search bar widget ───────────────────────────────────────────────────
+  Widget _addonSearchBar(BuildContext context, AddonController addonCtrl) {
+    return CustomContainer(
+      backgroundColor: AppColors.white,
+      borderRadius: AppRadii.card(context),
+      border:
+      Border.all(color: AppColors.primary.withOpacity(0.15), width: 1.5),
+      child: TextField(
+        onChanged: (v) => addonCtrl.searchParts(v),
+        style: AppTextStyles.bodyMedium(context)
+            .copyWith(color: AppColors.textPrimary),
+        decoration: InputDecoration(
+          hintText: "Search parts (e.g. nail, bolt...)",
+          hintStyle: AppTextStyles.bodySmall(context)
+              .copyWith(color: AppColors.textSecondary.withOpacity(0.6)),
+          prefixIcon: Icon(Icons.search_rounded,
+              color: AppColors.primary, size: rs(context, 20)),
+          suffixIcon: Obx(() => addonCtrl.searchQuery.value.isNotEmpty
+              ? GestureDetector(
+            onTap: () {
+              addonCtrl.clearSearch();
+            },
+            child: Icon(Icons.close_rounded,
+                color: AppColors.textSecondary,
+                size: rs(context, 18)),
+          )
+              : const SizedBox.shrink()),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: rs(context, 14),
+            vertical: rs(context, 13),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Search results list ──────────────────────────────────────────────────
+  // ── Search results list ──────────────────────────────────────────────────
+  Widget _searchResultsList(BuildContext context, AddonController addonCtrl) {
+    return Obx(() {
+      return SizedBox(
+        height: rs(context, 210), // card height fix karo jarur mukhtab
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.symmetric(horizontal: rs(context, 4)),
+          itemCount: addonCtrl.searchResults.length,
+          separatorBuilder: (_, __) => SizedBox(width: rs(context, 10)),
+          itemBuilder: (context, idx) {
+            final part = addonCtrl.searchResults[idx];
+            return _searchResultCard(context, addonCtrl, part);
+          },
+        ),
+      );
+    });
+  }
+
+// ── Single horizontal card ────────────────────────────────────────────────
+  Widget _searchResultCard(
+      BuildContext context, AddonController addonCtrl, AddonPartModel part) {
+    return CustomContainer(
+      width: rs(context, 150), // card width
+      backgroundColor: AppColors.white,
+      borderRadius: AppRadii.card(context),
+      border: Border.all(color: AppColors.primary.withOpacity(0.1)),
+      child: Padding(
+        padding: EdgeInsets.all(rs(context, 12)),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // ── Item image / fallback icon ────────────────────────────
+            Center(child: _partThumbnail(context, part)),
+            SizedBox(height: rs(context, 4)),
+
+            // ── Part name ─────────────────────────────────────────────
+            Text(
+              part.partName,
+              style: AppTextStyles.bodyMedium(context)
+                  .copyWith(fontWeight: FontWeight.w600),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: rs(context, 2)),
+
+            // ── Price ─────────────────────────────────────────────────
+            Text(
+              "₹${part.amount.toStringAsFixed(0)} per unit",
+              style: AppTextStyles.bodySmall(context)
+                  .copyWith(color: AppColors.textSecondary),
+            ),
+
+            const Spacer(),
+
+            // ── Add button ────────────────────────────────────────────
+            Obx(() {
+              final isAdding = addonCtrl.isAdding.value;
+              return GestureDetector(
+                onTap: isAdding ? null : () => addonCtrl.addPart(part),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: double.infinity,
+                  padding: EdgeInsets.symmetric(vertical: rs(context, 8)),
+                  decoration: BoxDecoration(
+                    color: isAdding
+                        ? AppColors.primary.withOpacity(0.4)
+                        : AppColors.primary,
+                    borderRadius: BorderRadius.circular(rs(context, 10)),
+                  ),
+                  child: isAdding
+                      ? Center(
+                    child: SizedBox(
+                      width: rs(context, 16),
+                      height: rs(context, 16),
+                      child: const CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                      : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.add_rounded,
+                          color: Colors.white, size: rs(context, 16)),
+                      SizedBox(width: rs(context, 4)),
+                      Text(
+                        "Add",
+                        style: AppTextStyles.bodySmall(context).copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _partThumbnail(BuildContext context, AddonPartModel part) {
+    final url = part.imageUrl;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(rs(context, 10)),
+      child: url != null
+          ? Image.network(
+        url,
+        // width: rs(context, 44),
+        height: rs(context, 85),
+        fit: BoxFit.fill,
+        errorBuilder: (_, __, ___) => _partIconFallback(context),
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return SizedBox(
+            width: rs(context, 44),
+            height: rs(context, 44),
+            child: Center(
+              child: SizedBox(
+                width: rs(context, 16),
+                height: rs(context, 16),
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: AppColors.primary,
+                  value: loadingProgress.expectedTotalBytes != null
+                      ? loadingProgress.cumulativeBytesLoaded /
+                      loadingProgress.expectedTotalBytes!
+                      : null,
+                ),
+              ),
+            ),
+          );
+        },
+      )
+          : _partIconFallback(context),
+    );
+  }
+
+  Widget _partIconFallback(BuildContext context) {
+    return Image.asset(AppAssets.logo,
+        height: rs(context, 180), fit: BoxFit.cover);
+  }
+
+  // ── Current order addons list ────────────────────────────────────────────
+  Widget _orderAddonsList(BuildContext context, AddonController addonCtrl) {
+    return CustomContainer(
+      backgroundColor: AppColors.white,
+      borderRadius: AppRadii.card(context),
+      border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+      child: Obx(() {
+        return Column(
+          children: [
+            // Header row
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                rs(context, 14),
+                rs(context, 10),
+                rs(context, 14),
+                rs(context, 6),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    "Added Parts",
+                    style: AppTextStyles.bodySmall(context).copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    "${addonCtrl.orderAddons.length} item${addonCtrl.orderAddons.length == 1 ? '' : 's'}",
+                    style: AppTextStyles.bodySmall(context)
+                        .copyWith(color: AppColors.textSecondary),
+                  ),
+                ],
+              ),
+            ),
+            Divider(
+                height: 1,
+                color: AppColors.textSecondary.withOpacity(0.08)),
+
+            ...addonCtrl.orderAddons.asMap().entries.map((entry) {
+              final idx = entry.key;
+              final addon = entry.value;
+              final isLast = idx == addonCtrl.orderAddons.length - 1;
+              final isRemoving = addonCtrl.removingId.value == addon.id;
+
+              return Column(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: rs(context, 14),
+                      vertical: rs(context, 12),
+                    ),
+                    child: Row(
+                      children: [
+                        // Quantity badge
+                        CustomContainer(
+                          padding: EdgeInsets.all(rs(context, 8)),
+                          backgroundColor:
+                          AppColors.primary.withOpacity(0.08),
+                          borderRadius:
+                          BorderRadius.circular(rs(context, 10)),
+                          child: Text(
+                            "×${addon.quantity}",
+                            style: AppTextStyles.bodySmall(context).copyWith(
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        SizedBox(width: rs(context, 10)),
+
+                        // Part name + price
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                addon.partName,
+                                style: AppTextStyles.bodyMedium(context)
+                                    .copyWith(
+                                    fontWeight: FontWeight.w600),
+                              ),
+                              Text(
+                                "₹${addon.unitPrice.toStringAsFixed(0)} × ${addon.quantity} = ₹${addon.totalPrice.toStringAsFixed(0)}",
+                                style: AppTextStyles.bodySmall(context)
+                                    .copyWith(
+                                    color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        // Remove button (−1 unit)
+                        GestureDetector(
+                          onTap: isRemoving
+                              ? null
+                              : () => addonCtrl.removePart(addon),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 180),
+                            padding: EdgeInsets.all(rs(context, 8)),
+                            decoration: BoxDecoration(
+                              color: AppColors.error.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(
+                                  rs(context, 10)),
+                              border: Border.all(
+                                color:
+                                AppColors.error.withOpacity(0.2),
+                              ),
+                            ),
+                            child: isRemoving
+                                ? SizedBox(
+                              width: rs(context, 16),
+                              height: rs(context, 16),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.error,
+                              ),
+                            )
+                                : Icon(
+                              Icons.remove_rounded,
+                              color: AppColors.error,
+                              size: rs(context, 18),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (!isLast)
+                    Divider(
+                      height: 1,
+                      color: AppColors.textSecondary.withOpacity(0.08),
+                    ),
+                ],
+              );
+            }),
+
+            // Total row
+            Divider(
+                height: 1,
+                color: AppColors.textSecondary.withOpacity(0.12)),
+            Padding(
+              padding: EdgeInsets.symmetric(
+                horizontal: rs(context, 14),
+                vertical: rs(context, 12),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    "Addon Total",
+                    style: AppTextStyles.bodyMedium(context)
+                        .copyWith(fontWeight: FontWeight.w600),
+                  ),
+                  const Spacer(),
+                  Text(
+                    "₹${addonCtrl.addonTotal.value.toStringAsFixed(0)}",
+                    style: AppTextStyles.bodyMedium(context).copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        );
+      }),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Close Order Button
+  // ══════════════════════════════════════════════════════════════════════════
 
   Widget _closeOrderButton(BuildContext context) {
     return CustomContainer(
@@ -374,14 +977,12 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
   // 5-Image Capture Bottom Sheet
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _showImageCaptureBottomSheet(
-      BuildContext context,
-      OrderDetailsController controller,
-      ) {
+      BuildContext context, OrderDetailsController controller) {
     if (Get.isBottomSheetOpen == true) return;
 
     showModalBottomSheet(
@@ -408,7 +1009,6 @@ class OrderDetailsPage extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  // ── Handle ────────────────────────────────────────
                   Padding(
                     padding: EdgeInsets.only(top: rs(context, 12)),
                     child: CustomContainer(
@@ -420,8 +1020,6 @@ class OrderDetailsPage extends StatelessWidget {
                       BorderRadius.circular(rs(context, 10)),
                     ),
                   ),
-
-                  // ── Header ────────────────────────────────────────
                   Padding(
                     padding: EdgeInsets.fromLTRB(
                       rs(context, 20),
@@ -450,7 +1048,8 @@ class OrderDetailsPage extends StatelessWidget {
                               Text(
                                 "Order Completion Photos",
                                 style: AppTextStyles.heading4(context)
-                                    .copyWith(fontWeight: FontWeight.bold),
+                                    .copyWith(
+                                    fontWeight: FontWeight.bold),
                               ),
                               Obx(() {
                                 final c = controller.capturedImages
@@ -460,7 +1059,8 @@ class OrderDetailsPage extends StatelessWidget {
                                   "$c of 5 photos captured",
                                   style: AppTextStyles.bodySmall(context)
                                       .copyWith(
-                                      color: AppColors.textSecondary),
+                                      color:
+                                      AppColors.textSecondary),
                                 );
                               }),
                             ],
@@ -475,8 +1075,6 @@ class OrderDetailsPage extends StatelessWidget {
                       ],
                     ),
                   ),
-
-                  // ── Progress Bar ───────────────────────────────────
                   Padding(
                     padding: EdgeInsets.symmetric(
                       horizontal: rs(context, 20),
@@ -489,8 +1087,6 @@ class OrderDetailsPage extends StatelessWidget {
                       return _linearProgressBar(context, count);
                     }),
                   ),
-
-                  // ── Image Grid ────────────────────────────────────
                   Flexible(
                     child: SingleChildScrollView(
                       controller: scrollController,
@@ -504,9 +1100,8 @@ class OrderDetailsPage extends StatelessWidget {
                           context, controller, sheetContext),
                     ),
                   ),
-
-                  // ── Bottom Bar ────────────────────────────────────
-                  _buildSheetBottomBar(context, controller, sheetContext),
+                  _buildSheetBottomBar(
+                      context, controller, sheetContext),
                 ],
               ),
             );
@@ -554,24 +1149,21 @@ class OrderDetailsPage extends StatelessWidget {
   Widget _buildImageGrid(
       BuildContext context,
       OrderDetailsController controller,
-      BuildContext sheetContext,
-      ) {
+      BuildContext sheetContext) {
     return Column(
       children: [
-        // Top row: slots 0, 1 (2 large tiles)
         Row(
           children: [
             Expanded(
-                child: _imageSlot(context, controller, 0, isLarge: true)),
+                child:
+                _imageSlot(context, controller, 0, isLarge: true)),
             SizedBox(width: rs(context, 10)),
             Expanded(
-                child: _imageSlot(context, controller, 1, isLarge: true)),
+                child:
+                _imageSlot(context, controller, 1, isLarge: true)),
           ],
         ),
-
         SizedBox(height: rs(context, 10)),
-
-        // Bottom row: slots 2, 3, 4 (3 smaller tiles)
         Row(
           children: [
             Expanded(child: _imageSlot(context, controller, 2)),
@@ -581,18 +1173,13 @@ class OrderDetailsPage extends StatelessWidget {
             Expanded(child: _imageSlot(context, controller, 4)),
           ],
         ),
-
         SizedBox(height: rs(context, 8)),
-
-        // Hint
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.info_outline_rounded,
-              size: rs(context, 13),
-              color: AppColors.textSecondary.withOpacity(0.6),
-            ),
+            Icon(Icons.info_outline_rounded,
+                size: rs(context, 13),
+                color: AppColors.textSecondary.withOpacity(0.6)),
             SizedBox(width: rs(context, 4)),
             Text(
               "Tap a slot to capture · Tap filled slot to retake",
@@ -611,9 +1198,9 @@ class OrderDetailsPage extends StatelessWidget {
       BuildContext context,
       OrderDetailsController controller,
       int index, {
-        bool isLarge = false,
-      }) {
-    final double height = isLarge ? rs(context, 165) : rs(context, 110);
+        bool isLarge = false}) {
+    final double height =
+    isLarge ? rs(context, 165) : rs(context, 110);
 
     return Obx(() {
       final file = controller.capturedImages[index];
@@ -638,14 +1225,13 @@ class OrderDetailsPage extends StatelessWidget {
             ),
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(rs(context, 15)),
+            borderRadius:
+            BorderRadius.circular(rs(context, 15)),
             child: isFilled
                 ? Stack(
               fit: StackFit.expand,
               children: [
                 Image.file(file, fit: BoxFit.cover),
-
-                // Dark gradient overlay
                 Positioned(
                   bottom: 0,
                   left: 0,
@@ -664,8 +1250,6 @@ class OrderDetailsPage extends StatelessWidget {
                     ),
                   ),
                 ),
-
-                // Success tick (top-left)
                 Positioned(
                   top: rs(context, 7),
                   left: rs(context, 7),
@@ -675,15 +1259,11 @@ class OrderDetailsPage extends StatelessWidget {
                       color: AppColors.success,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(
-                      Icons.check_rounded,
-                      color: Colors.white,
-                      size: rs(context, 12),
-                    ),
+                    child: Icon(Icons.check_rounded,
+                        color: Colors.white,
+                        size: rs(context, 12)),
                   ),
                 ),
-
-                // Delete icon (top-right)
                 Positioned(
                   top: rs(context, 7),
                   right: rs(context, 7),
@@ -696,16 +1276,12 @@ class OrderDetailsPage extends StatelessWidget {
                         color: Colors.black.withOpacity(0.5),
                         shape: BoxShape.circle,
                       ),
-                      child: Icon(
-                        Icons.close_rounded,
-                        color: Colors.white,
-                        size: rs(context, 13),
-                      ),
+                      child: Icon(Icons.close_rounded,
+                          color: Colors.white,
+                          size: rs(context, 13)),
                     ),
                   ),
                 ),
-
-                // Photo label (bottom-left)
                 Positioned(
                   bottom: rs(context, 6),
                   left: rs(context, 8),
@@ -727,20 +1303,24 @@ class OrderDetailsPage extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.all(rs(context, 10)),
                   decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.08),
+                    color:
+                    AppColors.primary.withOpacity(0.08),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
                     Icons.add_a_photo_rounded,
                     color: AppColors.primary.withOpacity(0.6),
-                    size: rs(context, isLarge ? 26 : 22),
+                    size: rs(
+                        context, isLarge ? 26 : 22),
                   ),
                 ),
                 SizedBox(height: rs(context, 6)),
                 Text(
                   "Photo ${index + 1}",
-                  style: AppTextStyles.bodySmall(context).copyWith(
-                    color: AppColors.textSecondary.withOpacity(0.7),
+                  style: AppTextStyles.bodySmall(context)
+                      .copyWith(
+                    color:
+                    AppColors.textSecondary.withOpacity(0.7),
                     fontWeight: FontWeight.w500,
                     fontSize: rs(context, 11),
                   ),
@@ -753,11 +1333,8 @@ class OrderDetailsPage extends StatelessWidget {
     });
   }
 
-  Widget _buildSheetBottomBar(
-      BuildContext context,
-      OrderDetailsController controller,
-      BuildContext sheetContext,
-      ) {
+  Widget _buildSheetBottomBar(BuildContext context,
+      OrderDetailsController controller, BuildContext sheetContext) {
     return Obx(() {
       final count = controller.capturedCount;
       final allDone = controller.allImagesCaptured;
@@ -772,14 +1349,12 @@ class OrderDetailsPage extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           border: Border(
-            top: BorderSide(
-              color: AppColors.textSecondary.withOpacity(0.1),
-            ),
-          ),
+              top: BorderSide(
+                  color:
+                  AppColors.textSecondary.withOpacity(0.1))),
         ),
         child: Row(
           children: [
-            // Retake All button
             if (count > 0)
               Padding(
                 padding: EdgeInsets.only(right: rs(context, 10)),
@@ -790,26 +1365,23 @@ class OrderDetailsPage extends StatelessWidget {
                       horizontal: rs(context, 14),
                       vertical: rs(context, 14),
                     ),
-                    backgroundColor: AppColors.error.withOpacity(0.07),
+                    backgroundColor:
+                    AppColors.error.withOpacity(0.07),
                     borderRadius:
                     BorderRadius.circular(rs(context, 14)),
                     border: Border.all(
-                      color: AppColors.error.withOpacity(0.25),
-                    ),
-                    child: Icon(
-                      Icons.refresh_rounded,
-                      color: AppColors.error,
-                      size: rs(context, 22),
-                    ),
+                        color: AppColors.error.withOpacity(0.25)),
+                    child: Icon(Icons.refresh_rounded,
+                        color: AppColors.error,
+                        size: rs(context, 22)),
                   ),
                 ),
               ),
-
-            // Main CTA
             Expanded(
               child: GestureDetector(
                 onTap: (allDone ||
-                    count >= OrderDetailsController.minImageCount)
+                    count >=
+                        OrderDetailsController.minImageCount)
                     ? () async {
                   Navigator.of(sheetContext).pop();
                   await controller.completeOrder();
@@ -819,8 +1391,8 @@ class OrderDetailsPage extends StatelessWidget {
                     : null,
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
-                  padding:
-                  EdgeInsets.symmetric(vertical: rs(context, 15)),
+                  padding: EdgeInsets.symmetric(
+                      vertical: rs(context, 15)),
                   decoration: BoxDecoration(
                     color: allDone
                         ? AppColors.success.withOpacity(0.9)
@@ -842,11 +1414,12 @@ class OrderDetailsPage extends StatelessWidget {
                       Text(
                         allDone ||
                             count >=
-                                OrderDetailsController.minImageCount
+                                OrderDetailsController
+                                    .minImageCount
                             ? "Complete Order"
                             : "Capture Photo ${count + 1}",
-                        style:
-                        AppTextStyles.buttonMedium(context).copyWith(
+                        style: AppTextStyles.buttonMedium(context)
+                            .copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w700,
                         ),
@@ -862,14 +1435,12 @@ class OrderDetailsPage extends StatelessWidget {
     });
   }
 
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
   // OTP Bottom Sheet
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
 
   void _showOtpBottomSheet(
-      BuildContext context,
-      OrderDetailsController controller,
-      ) {
+      BuildContext context, OrderDetailsController controller) {
     print("OTP BOTTOM SHEET SHOW");
     if (Get.isBottomSheetOpen == true) return;
 
@@ -931,7 +1502,8 @@ class OrderDetailsPage extends StatelessWidget {
                     height: rs(context, 4),
                     backgroundColor:
                     AppColors.textSecondary.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(rs(context, 10)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 10)),
                   ),
                   SizedBox(height: rs(context, 16)),
                   Row(
@@ -940,38 +1512,37 @@ class OrderDetailsPage extends StatelessWidget {
                         padding: EdgeInsets.all(rs(context, 10)),
                         backgroundColor:
                         AppColors.primary.withOpacity(0.1),
-                        borderRadius:
-                        BorderRadius.circular(rs(context, 100)),
-                        child: Icon(
-                          Icons.security,
-                          color: AppColors.primary,
-                          size: rs(context, 22),
-                        ),
+                        borderRadius: BorderRadius.circular(
+                            rs(context, 100)),
+                        child: Icon(Icons.security,
+                            color: AppColors.primary,
+                            size: rs(context, 22)),
                       ),
                       SizedBox(width: rs(context, 10)),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text("Verify User",
+                                style:
+                                AppTextStyles.heading4(context)
+                                    .copyWith(
+                                    fontWeight:
+                                    FontWeight.bold)),
                             Text(
-                              "Verify User",
-                              style: AppTextStyles.heading4(context)
-                                  .copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              "Enter 6-digit OTP sent to customer",
-                              style: AppTextStyles.bodySmall(context)
-                                  .copyWith(
-                                  color: AppColors.textSecondary),
-                            ),
+                                "Enter 6-digit OTP sent to customer",
+                                style:
+                                AppTextStyles.bodySmall(context)
+                                    .copyWith(
+                                    color: AppColors
+                                        .textSecondary)),
                           ],
                         ),
                       ),
                       CustomContainer(
                         padding: EdgeInsets.symmetric(
-                          horizontal: rs(context, 10),
-                          vertical: rs(context, 6),
-                        ),
+                            horizontal: rs(context, 10),
+                            vertical: rs(context, 6)),
                         backgroundColor:
                         AppColors.warning.withOpacity(0.12),
                         borderRadius:
@@ -979,76 +1550,78 @@ class OrderDetailsPage extends StatelessWidget {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(
-                              Icons.timer_outlined,
-                              color: AppColors.warning,
-                              size: rs(context, 14),
-                            ),
-                            SizedBox(width: rs(context, 4)),
-                            Text(
-                              "$min:$s",
-                              style: AppTextStyles.bodySmall(context)
-                                  .copyWith(
+                            Icon(Icons.timer_outlined,
                                 color: AppColors.warning,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                                size: rs(context, 14)),
+                            SizedBox(width: rs(context, 4)),
+                            Text("$min:$s",
+                                style: AppTextStyles.bodySmall(
+                                    context)
+                                    .copyWith(
+                                    color: AppColors.warning,
+                                    fontWeight: FontWeight.bold)),
                           ],
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: rs(context, 22)),
-                  Obx(() {
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: List.generate(6, (i) {
-                        final filled = i < digits.length;
-                        final isActive = i == digits.length;
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 150),
-                          width: rs(context, 46),
-                          height: rs(context, 54),
-                          decoration: BoxDecoration(
+                  Obx(() => Row(
+                    mainAxisAlignment:
+                    MainAxisAlignment.spaceEvenly,
+                    children: List.generate(6, (i) {
+                      final filled = i < digits.length;
+                      final isActive = i == digits.length;
+                      return AnimatedContainer(
+                        duration:
+                        const Duration(milliseconds: 150),
+                        width: rs(context, 46),
+                        height: rs(context, 54),
+                        decoration: BoxDecoration(
+                          color: filled
+                              ? AppColors.primary
+                              .withOpacity(0.08)
+                              : isActive
+                              ? AppColors.primary
+                              .withOpacity(0.04)
+                              : AppColors.white,
+                          borderRadius: BorderRadius.circular(
+                              rs(context, 10)),
+                          border: Border.all(
                             color: filled
-                                ? AppColors.primary.withOpacity(0.08)
+                                ? AppColors.primary
                                 : isActive
-                                ? AppColors.primary.withOpacity(0.04)
-                                : AppColors.white,
+                                ? AppColors.primary
+                                : AppColors.textSecondary
+                                .withOpacity(0.25),
+                            width: filled || isActive ? 2 : 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: filled
+                              ? Text(digits[i],
+                              style:
+                              AppTextStyles.heading4(
+                                  context)
+                                  .copyWith(
+                                  color: AppColors
+                                      .primary,
+                                  fontWeight:
+                                  FontWeight.bold))
+                              : isActive
+                              ? CustomContainer(
+                            width: rs(context, 2),
+                            height: rs(context, 22),
+                            backgroundColor:
+                            AppColors.primary,
                             borderRadius:
-                            BorderRadius.circular(rs(context, 10)),
-                            border: Border.all(
-                              color: filled
-                                  ? AppColors.primary
-                                  : isActive
-                                  ? AppColors.primary
-                                  : AppColors.textSecondary
-                                  .withOpacity(0.25),
-                              width: filled || isActive ? 2 : 1,
-                            ),
-                          ),
-                          child: Center(
-                            child: filled
-                                ? Text(
-                              digits[i],
-                              style: AppTextStyles.heading4(context).copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )
-                                : isActive
-                                ? CustomContainer(
-                              width: rs(context, 2),
-                              height: rs(context, 22),
-                              backgroundColor: AppColors.primary,
-                              borderRadius: BorderRadius.zero,
-                            )
-                                : const SizedBox.shrink(),
-                          ),
-                        );
-                      }),
-                    );
-                  }),
+                            BorderRadius.zero,
+                          )
+                              : const SizedBox.shrink(),
+                        ),
+                      );
+                    }),
+                  )),
                   SizedBox(height: rs(context, 20)),
                   _buildNumberPad(
                       context, digits, controller, sheetContext),
@@ -1068,8 +1641,7 @@ class OrderDetailsPage extends StatelessWidget {
       BuildContext context,
       RxList<String> digits,
       OrderDetailsController controller,
-      BuildContext sheetContext,
-      ) {
+      BuildContext sheetContext) {
     final List<List<String>> rows = [
       ['1', '2', '3'],
       ['4', '5', '6'],
@@ -1089,8 +1661,8 @@ class OrderDetailsPage extends StatelessWidget {
 
               return Expanded(
                 child: Padding(
-                  padding:
-                  EdgeInsets.symmetric(horizontal: rs(context, 5)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: rs(context, 5)),
                   child: Material(
                     color: Colors.transparent,
                     borderRadius:
@@ -1117,8 +1689,8 @@ class OrderDetailsPage extends StatelessWidget {
                             controller.otpController.text =
                                 digits.join();
                             if (digits.length == 6) {
-                              await Future.delayed(
-                                  const Duration(milliseconds: 250));
+                              await Future.delayed(const Duration(
+                                  milliseconds: 250));
                               await controller.confirmOtp();
                             }
                           }
@@ -1144,37 +1716,36 @@ class OrderDetailsPage extends StatelessWidget {
                             ? null
                             : [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color:
+                            Colors.black.withOpacity(0.04),
                             blurRadius: 6,
                             offset: const Offset(0, 2),
                           ),
                         ],
                         child: Center(
                           child: isDel
-                              ? Icon(
-                            Icons.backspace_outlined,
-                            color: AppColors.textSecondary,
-                            size: rs(context, 22),
-                          )
+                              ? Icon(Icons.backspace_outlined,
+                              color: AppColors.textSecondary,
+                              size: rs(context, 22))
                               : isCancel
-                              ? Text(
-                            "Cancel",
-                            style: AppTextStyles.bodySmall(
-                                context)
-                                .copyWith(
-                              color: AppColors.error,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          )
-                              : Text(
-                            key,
-                            style: AppTextStyles.heading4(
-                                context)
-                                .copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
+                              ? Text("Cancel",
+                              style:
+                              AppTextStyles.bodySmall(
+                                  context)
+                                  .copyWith(
+                                  color:
+                                  AppColors.error,
+                                  fontWeight:
+                                  FontWeight.w600))
+                              : Text(key,
+                              style:
+                              AppTextStyles.heading4(
+                                  context)
+                                  .copyWith(
+                                  fontWeight:
+                                  FontWeight.w600,
+                                  color: AppColors
+                                      .textPrimary)),
                         ),
                       ),
                     ),
@@ -1188,9 +1759,9 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
   // Common Widgets
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
 
   Widget _infoCard(
       BuildContext context, {
@@ -1207,11 +1778,9 @@ class OrderDetailsPage extends StatelessWidget {
         children: [
           Icon(icon, color: AppColors.white),
           SizedBox(height: rs(context, 6)),
-          Text(
-            label,
-            style: AppTextStyles.bodySmall(context)
-                .copyWith(color: AppColors.white.withOpacity(0.9)),
-          ),
+          Text(label,
+              style: AppTextStyles.bodySmall(context)
+                  .copyWith(color: AppColors.white.withOpacity(0.9))),
           Text(
             value,
             maxLines: 1,
@@ -1228,7 +1797,6 @@ class OrderDetailsPage extends StatelessWidget {
 
   Widget _paymentCard(BuildContext context, order) {
     final isPaid = order.isPaid;
-    final color = isPaid ? AppColors.success : AppColors.warning;
     return CustomContainer(
       padding: EdgeInsets.all(rs(context, 12)),
       backgroundColor: AppColors.error.withOpacity(0.12),
@@ -1236,11 +1804,9 @@ class OrderDetailsPage extends StatelessWidget {
       border: Border.all(color: AppColors.error.withOpacity(0.3)),
       child: Row(
         children: [
-          _iconChip(
-            context,
-            icon: isPaid ? Icons.check_circle : Icons.payments,
-            color: AppColors.error,
-          ),
+          _iconChip(context,
+              icon: isPaid ? Icons.check_circle : Icons.payments,
+              color: AppColors.error),
           SizedBox(width: rs(context, 12)),
           Text(
             isPaid ? "Paid" : "Unpaid",
@@ -1250,24 +1816,21 @@ class OrderDetailsPage extends StatelessWidget {
           const Spacer(),
           Text(
             "₹${order.totalAmount}",
-            style:
-            AppTextStyles.heading4(context).copyWith(color: AppColors.error),
+            style: AppTextStyles.heading4(context)
+                .copyWith(color: AppColors.error),
           ),
         ],
       ),
     );
   }
 
-  Widget _contactCard(
-      BuildContext context,
-      String phoneText,
-      String cleanPhone,
-      bool canCall,
-      ) {
+  Widget _contactCard(BuildContext context, String phoneText,
+      String cleanPhone, bool canCall) {
     return CustomContainer(
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
-      border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+      border:
+      Border.all(color: AppColors.primary.withOpacity(0.08)),
       child: Column(
         children: [
           Padding(
@@ -1280,11 +1843,10 @@ class OrderDetailsPage extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        "Phone Number",
-                        style: AppTextStyles.bodySmall(context)
-                            .copyWith(color: AppColors.textSecondary),
-                      ),
+                      Text("Phone Number",
+                          style: AppTextStyles.bodySmall(context)
+                              .copyWith(
+                              color: AppColors.textSecondary)),
                       SizedBox(height: rs(context, 4)),
                       Text(
                         phoneText,
@@ -1322,7 +1884,9 @@ class OrderDetailsPage extends StatelessWidget {
                 child: _actionButton(
                   context,
                   Icons.call_rounded,
-                  canCall ? "Call Customer" : "Phone available later",
+                  canCall
+                      ? "Call Customer"
+                      : "Phone available later",
                 ),
               ),
             ),
@@ -1332,86 +1896,13 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  // Widget _locationCard(
-  //     BuildContext context,
-  //     String addressText,
-  //     bool canNavigate,
-  //     address,
-  //     ) {
-  //   return CustomContainer(
-  //     backgroundColor: AppColors.white,
-  //     borderRadius: AppRadii.card(context),
-  //     border: Border.all(color: AppColors.primary.withOpacity(0.08)),
-  //     child: Column(
-  //       children: [
-  //         Padding(
-  //           padding: EdgeInsets.all(rs(context, 14)),
-  //           child: Row(
-  //             crossAxisAlignment: CrossAxisAlignment.start,
-  //             children: [
-  //               _iconChip(context, icon: Icons.location_on_rounded),
-  //               SizedBox(width: rs(context, 12)),
-  //               Expanded(
-  //                 child: Text(
-  //                   addressText,
-  //                   style: AppTextStyles.bodyMedium(context).copyWith(
-  //                     fontWeight: FontWeight.w600,
-  //                     color: canNavigate
-  //                         ? AppColors.textPrimary
-  //                         : AppColors.textSecondary,
-  //                   ),
-  //                 ),
-  //               ),
-  //             ],
-  //           ),
-  //         ),
-  //         const Divider(height: 1),
-  //         Padding(
-  //           padding: EdgeInsets.all(rs(context, 14)),
-  //           child: InkWell(
-  //             onTap: canNavigate
-  //                 ? () async {
-  //               final uri = Uri.parse(
-  //                 "https://www.google.com/maps/dir/?api=1"
-  //                     "&origin=Current+Location"
-  //                     "&destination=${address.latitude},${address.longitude}"
-  //                     "&travelmode=driving",
-  //               );
-  //               if (!await launchUrl(uri,
-  //                   mode: LaunchMode.externalApplication)) {
-  //                 CustomSnackbar.showError(
-  //                     "Error", "Could not open Google Maps");
-  //               }
-  //             }
-  //                 : null,
-  //             borderRadius: AppRadii.button(context),
-  //             child: Opacity(
-  //               opacity: canNavigate ? 1 : 0.5,
-  //               child: _actionButton(
-  //                 context,
-  //                 Icons.navigation,
-  //                 canNavigate
-  //                     ? "Start Navigation"
-  //                     : "Address available later",
-  //               ),
-  //             ),
-  //           ),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
-  Widget _locationCard(
-      BuildContext context,
-      String addressText,
-      bool canNavigate,
-      address,
-      ) {
+  Widget _locationCard(BuildContext context, String addressText,
+      bool canNavigate, address) {
     return CustomContainer(
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
-      border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+      border:
+      Border.all(color: AppColors.primary.withOpacity(0.08)),
       child: Column(
         children: [
           Padding(
@@ -1419,7 +1910,8 @@ class OrderDetailsPage extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _iconChip(context, icon: Icons.location_on_rounded),
+                _iconChip(context,
+                    icon: Icons.location_on_rounded),
                 SizedBox(width: rs(context, 12)),
                 Expanded(
                   child: Text(
@@ -1441,16 +1933,17 @@ class OrderDetailsPage extends StatelessWidget {
             child: InkWell(
               onTap: canNavigate
                   ? () {
-                // ✅ In-app navigation — no Google Maps app needed
                 Get.to(
                       () => NavigationPage(
                     destinationLat: address.latitude!,
                     destinationLng: address.longitude!,
                     destinationName:
-                    address.formattedAddress ?? "Customer Location",
+                    address.formattedAddress ??
+                        "Customer Location",
                   ),
                   transition: Transition.downToUp,
-                  duration: const Duration(milliseconds: 400),
+                  duration:
+                  const Duration(milliseconds: 400),
                 );
               }
                   : null,
@@ -1472,10 +1965,12 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _actionButton(BuildContext context, IconData icon, String text) {
+  Widget _actionButton(
+      BuildContext context, IconData icon, String text) {
     return CustomContainer(
       width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: rs(context, 14)),
+      padding:
+      EdgeInsets.symmetric(vertical: rs(context, 14)),
       backgroundColor: AppColors.secondary.withOpacity(0.8),
       borderRadius: AppRadii.button(context),
       child: Row(
@@ -1483,13 +1978,11 @@ class OrderDetailsPage extends StatelessWidget {
         children: [
           Icon(icon, color: AppColors.white),
           SizedBox(width: rs(context, 8)),
-          Text(
-            text,
-            style: AppTextStyles.buttonMedium(context).copyWith(
-              fontWeight: FontWeight.w600,
-              color: AppColors.white,
-            ),
-          ),
+          Text(text,
+              style: AppTextStyles.buttonMedium(context).copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.white,
+              )),
         ],
       ),
     );
@@ -1499,13 +1992,12 @@ class OrderDetailsPage extends StatelessWidget {
       {required IconData icon, Color? color}) {
     return CustomContainer(
       padding: EdgeInsets.all(rs(context, 10)),
-      backgroundColor: (color ?? AppColors.secondary).withOpacity(0.12),
+      backgroundColor:
+      (color ?? AppColors.secondary).withOpacity(0.12),
       borderRadius: BorderRadius.circular(rs(context, 12)),
-      child: Icon(
-        icon,
-        color: color ?? AppColors.secondary,
-        size: rs(context, 22),
-      ),
+      child: Icon(icon,
+          color: color ?? AppColors.secondary,
+          size: rs(context, 22)),
     );
   }
 
@@ -1520,13 +2012,12 @@ class OrderDetailsPage extends StatelessWidget {
       children: [
         Row(
           children: [
-            _iconChip(context, icon: icon, color: AppColors.primary),
+            _iconChip(context,
+                icon: icon, color: AppColors.primary),
             SizedBox(width: rs(context, 8)),
-            Text(
-              title,
-              style: AppTextStyles.bodyLarge(context)
-                  .copyWith(fontWeight: FontWeight.bold),
-            ),
+            Text(title,
+                style: AppTextStyles.bodyLarge(context)
+                    .copyWith(fontWeight: FontWeight.bold)),
           ],
         ),
         SizedBox(height: rs(context, 10)),

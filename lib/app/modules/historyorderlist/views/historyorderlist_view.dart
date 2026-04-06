@@ -44,7 +44,10 @@ class HistoryOrdersListView extends StatelessWidget {
               return OrderListItem(
                 order: order,
                 onTap: () {
-                  Get.to(() => OrderDetailsPage(orderId: order.orderId));
+                  Get.to(() => OrderDetailsPage(orderId: order.orderId))
+                      ?.then((_) {
+                    controller.refreshOrders();
+                  });
                 },
               );
             },
