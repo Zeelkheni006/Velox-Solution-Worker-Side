@@ -33,6 +33,7 @@ class OrderModel {
   final AddressModel? address;
   final ContactModel? contact;
 
+  // ✅ THIS WAS MISSING
   OrderModel({
     required this.orderId,
     required this.serviceDate,
@@ -44,6 +45,23 @@ class OrderModel {
     this.address,
     this.contact,
   });
+
+  // ✅ copyWith
+  OrderModel copyWith({
+    double? totalAmount,
+  }) {
+    return OrderModel(
+      orderId: orderId,
+      serviceDate: serviceDate,
+      slotTime: slotTime,
+      totalAmount: totalAmount ?? this.totalAmount,
+      paymentStatus: paymentStatus,
+      orderStatus: orderStatus,
+      services: services,
+      address: address,
+      contact: contact,
+    );
+  }
 
   bool get isPaid => paymentStatus == 'paid';
 
