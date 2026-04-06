@@ -8,6 +8,7 @@ import '../../../../core/utils/app_responsive.dart';
 import '../../../../core/utils/custom_container.dart';
 import '../../../../core/utils/custome_snakbar.dart';
 import '../../../../core/utils/map_navigation_page.dart';
+import '../../../../core/utils/reschedule_bottom_sheet.dart';
 import '../controllers/order_details_controller.dart';
 
 class OrderDetailsPage extends StatelessWidget {
@@ -152,7 +153,7 @@ class OrderDetailsPage extends StatelessWidget {
                               child: _locationCard(
                                   context, addressText, canNavigate, address),
                             ),
-                            SizedBox(height: rs(context, 24)),
+                            SizedBox(height: rs(context, 60)),
                           ],
                         ),
                       ),
@@ -231,21 +232,69 @@ class OrderDetailsPage extends StatelessWidget {
                     left: 0,
                     right: 0,
                     child: CustomContainer(
-                      padding: EdgeInsets.all(rs(context, 16)),
+                      padding: EdgeInsets.fromLTRB(
+                        rs(context, 16),
+                        rs(context, 12),
+                        rs(context, 16),
+                        rs(context, 24),
+                      ),
                       backgroundColor: AppColors.surface,
                       borderRadius: AppRadii.button(context),
-                      onTap: () =>
-                          _showImageCaptureBottomSheet(context, controller),
-                      child: _actionButton(
-                        context,
-                        controller.allImagesCaptured
-                            ? Icons.check_circle
-                            : Icons.camera_alt_rounded,
-                        controller.allImagesCaptured
-                            ? "Complete Order"
-                            : controller.capturedCount > 0
-                            ? "Photos ${controller.capturedCount}/5 — Continue"
-                            : "Capture Order Photos",
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // ── Primary: Capture photos / Complete order ──────────────
+                          GestureDetector(
+                            onTap: () => _showImageCaptureBottomSheet(context, controller),
+                            child: _actionButton(
+                              context,
+                              controller.allImagesCaptured
+                                  ? Icons.check_circle
+                                  : Icons.camera_alt_rounded,
+                              controller.allImagesCaptured
+                                  ? "Complete Order"
+                                  : controller.capturedCount > 0
+                                  ? "Photos ${controller.capturedCount}/5 — Continue"
+                                  : "Capture Order Photos",
+                            ),
+                          ),
+
+                          SizedBox(height: rs(context, 10)),
+
+                          // ── Secondary: Reschedule (optional) ─────────────────────
+                          GestureDetector(
+                            onTap: () =>
+                                RescheduleBottomSheet.show(context, controller: controller),
+                            child: CustomContainer(
+                              width: double.infinity,
+                              padding: EdgeInsets.symmetric(vertical: rs(context, 13)),
+                              backgroundColor: Colors.transparent,
+                              borderRadius: AppRadii.button(context),
+                              border: Border.all(
+                                color: AppColors.warning.withOpacity(0.55),
+                                width: 1.5,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.event_repeat_rounded,
+                                    color: AppColors.warning,
+                                    size: rs(context, 18),
+                                  ),
+                                  SizedBox(width: rs(context, 8)),
+                                  Text(
+                                    "Reschedule Order",
+                                    style: AppTextStyles.buttonMedium(context).copyWith(
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.warning,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -344,7 +393,7 @@ class OrderDetailsPage extends StatelessWidget {
       barrierColor: Colors.black54,
       builder: (sheetContext) {
         return DraggableScrollableSheet(
-          initialChildSize: rs(context, 0.68),
+          initialChildSize: rs(context, 0.8),
           minChildSize: rs(context, 0.5),
           maxChildSize: rs(context, 0.92),
           expand: false,
