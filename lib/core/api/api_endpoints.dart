@@ -5,11 +5,11 @@ class ApiUrl {
   // static const String baseUrl = "http://72.61.245.134:8000";
 
   // ZEEL //
-  static const String baseUrl = "http://192.168.29.69:5000";
+  // static const String baseUrl = "http://192.168.29.69:5000";
 
 
   // HARSH //
-  // static const String baseUrl = "http://192.168.29.164:5000";
+  static const String baseUrl = "http://192.168.29.164:5000";
 
   // AUTH //
   static const String LoginInitiate = "/api/v1/worker/auth/login/initiate";
@@ -51,5 +51,9 @@ class ApiUrl {
   // WORKER ORDER STATUS //
   static String workerOrderStatus(int orderId) => "/api/v1/worker/dashboard/orders/order-status/$orderId";
   static const String ordercomplete = "/api/v1/worker/dashboard/orders/complete";
+
+  // RESCHEDULE SLOTS //
+  static const String rescheduleslots = "/api/v1/worker/dashboard/orders/reschedule/available-slots?order_id={{CURRENT ORDER ID ::: XXX}}";
+  static const String slotconfirm = "/api/v1/worker/dashboard/orders/reschedule/confirm";
 
 }
