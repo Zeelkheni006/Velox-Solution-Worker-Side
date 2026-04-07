@@ -8,6 +8,7 @@ import '../../../../core/utils/app_responsive.dart';
 import '../../../../core/utils/custom_container.dart';
 import '../../../../core/utils/custom_divider.dart';
 import '../../../../core/utils/custom_textField.dart';
+import '../../../../core/utils/exit_handler.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/login_controller.dart';
 
@@ -16,63 +17,66 @@ class LoginScreen extends GetView<LoginController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.symmetric(
-              horizontal: rs(context, 24),
-              vertical: rs(context, 16),
-            ),
-            child: Form(
-              key: controller.formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  // ANIMATED LOGO CONTAINER
-                  _buildLogo(context),
-
-                  SizedBox(height: rs(context, 32)),
-
-                  // WELCOME TEXT
-                  _buildWelcomeText(context),
-
-                  SizedBox(height: rs(context, 32)),
-
-                  // EMAIL / PHONE INPUT
-                  _buildCredentialInput(context),
-
-                  SizedBox(height: rs(context, 20)),
-
-                  // PASSWORD INPUT
-                  _buildPasswordInput(context),
-
-                  // FORGOT PASSWORD
-                  _buildForgotPassword(context),
-
-                  SizedBox(height: rs(context, 12)),
-
-                  // LOGIN BUTTON
-                  _buildLoginButton(context),
-
-                  SizedBox(height: rs(context, 24)),
-
-                  // DIVIDER WITH "OR"
-                  CustomDivider(
-                    type: DividerType.or,
-                    thickness: rs(context, 1),
-                    color: AppColors.primary.withOpacity(0.3),
-                  ),
-
-                  SizedBox(height: rs(context, 24)),
-
-                  // OTP LOGIN BUTTON
-                  _buildOTPButton(context),
-
-                  SizedBox(height: rs(context, 32)),
-
-                ],
+    return WillPopScope(
+      onWillPop: () => ExitHandler.onWillExit(context),
+      child: Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(
+                horizontal: rs(context, 24),
+                vertical: rs(context, 16),
+              ),
+              child: Form(
+                key: controller.formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // ANIMATED LOGO CONTAINER
+                    _buildLogo(context),
+      
+                    SizedBox(height: rs(context, 32)),
+      
+                    // WELCOME TEXT
+                    _buildWelcomeText(context),
+      
+                    SizedBox(height: rs(context, 32)),
+      
+                    // EMAIL / PHONE INPUT
+                    _buildCredentialInput(context),
+      
+                    SizedBox(height: rs(context, 20)),
+      
+                    // PASSWORD INPUT
+                    _buildPasswordInput(context),
+      
+                    // FORGOT PASSWORD
+                    _buildForgotPassword(context),
+      
+                    SizedBox(height: rs(context, 12)),
+      
+                    // LOGIN BUTTON
+                    _buildLoginButton(context),
+      
+                    SizedBox(height: rs(context, 24)),
+      
+                    // DIVIDER WITH "OR"
+                    CustomDivider(
+                      type: DividerType.or,
+                      thickness: rs(context, 1),
+                      color: AppColors.primary.withOpacity(0.3),
+                    ),
+      
+                    SizedBox(height: rs(context, 24)),
+      
+                    // OTP LOGIN BUTTON
+                    _buildOTPButton(context),
+      
+                    SizedBox(height: rs(context, 32)),
+      
+                  ],
+                ),
               ),
             ),
           ),

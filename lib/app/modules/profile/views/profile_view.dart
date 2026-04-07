@@ -1,12 +1,13 @@
+import 'package:apilearning/core/api/api_endpoints.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/Shimmer/profile_shimmer.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/app_responsive.dart';
 import '../../../../core/utils/custom_container.dart';
 import '../../../../core/utils/custome_snakbar.dart';
-import '../../../../features/profile/presentation/pages/availability_settings_page.dart';
 import '../../../routes/app_pages.dart';
 import '../controllers/profile_controller.dart';
 
@@ -38,27 +39,39 @@ class ProfileView extends GetView<ProfileController> {
         ),
         title: Text("My Profile", style: AppTextStyles.heading3(context)),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildProfileHeader(context),
-            SizedBox(height: rs(context, 12)),
-            // _buildStatusCard(context),
-            // SizedBox(height: rs(context, 12)),
-            // _buildPerformanceCards(context),
-            // SizedBox(height: rs(context, 12)),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: rs(context, 16)),
-              child: _buildQuickActions(context),
+      body: Obx(() {
+        // ── SHIMMER LOADING STATE ──
+        if (controller.isLoading.value) {
+          return const ProfileShimmer();
+        }
+
+        // ── MAIN CONTENT WITH PULL TO REFRESH ──
+        return RefreshIndicator(
+          onRefresh: controller.refreshProfile,
+          color: AppColors.primary,
+          strokeWidth: 2.5,
+          displacement: 50,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: Column(
+              children: [
+                _buildProfileHeader(context),
+                SizedBox(height: rs(context, 12)),
+                Padding(
+                  padding:
+                  EdgeInsets.symmetric(horizontal: rs(context, 16)),
+                  child: _buildQuickActions(context),
+                ),
+                SizedBox(height: rs(context, 12)),
+                _buildSettingsSection(context),
+                SizedBox(height: rs(context, 16)),
+                _buildLogoutSection(context),
+                SizedBox(height: rs(context, 24)),
+              ],
             ),
-            SizedBox(height: rs(context, 12)),
-            _buildSettingsSection(context),
-            SizedBox(height: rs(context, 16)),
-            _buildLogoutSection(context),
-            SizedBox(height: rs(context, 24)),
-          ],
-        ),
-      ),
+          ),
+        );
+      }),
     );
   }
 
@@ -103,7 +116,7 @@ class ProfileView extends GetView<ProfileController> {
                   radius: rs(context, 45),
                   backgroundColor: AppColors.greyLight,
                   backgroundImage: worker["photo"] != null
-                      ? NetworkImage(worker["photo"])
+                      ? NetworkImage("${ApiUrl.baseUrl}${worker["photo"]}")
                       : null,
                   child: worker["photo"] == null
                       ? Icon(
@@ -130,7 +143,7 @@ class ProfileView extends GetView<ProfileController> {
               style: AppTextStyles.bodySmall(context),
             ),
             SizedBox(height: rs(context, 6)),
-            // Phone
+            // Phone badge
             CustomContainer(
               padding: EdgeInsets.symmetric(
                 horizontal: rs(context, 14),
@@ -164,183 +177,6 @@ class ProfileView extends GetView<ProfileController> {
     });
   }
 
-  /// ================= STATUS CARD =================
-  Widget _buildStatusCard(BuildContext context) {
-    return CustomContainer(
-      width: double.infinity,
-      padding: EdgeInsets.all(rs(context, 16)),
-      backgroundColor: AppColors.white,
-      borderRadius: AppRadii.card(context),
-      border: Border.all(
-        color: AppColors.border,
-        width: rs(context, 1),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.black.withOpacity(0.04),
-          blurRadius: rs(context, 10),
-          offset: Offset(0, rs(context, 2)),
-        ),
-      ],
-      child: Obx(() {
-        final online = controller.isOnline.value;
-        return Row(
-          children: [
-            // Status Indicator
-            Container(
-              width: rs(context, 50),
-              height: rs(context, 50),
-              decoration: BoxDecoration(
-                color: (online ? AppColors.success : AppColors.error)
-                    .withOpacity(0.1),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: (online ? AppColors.success : AppColors.error)
-                      .withOpacity(0.3),
-                  width: rs(context, 2),
-                ),
-              ),
-              child: Center(
-                child: Container(
-                  width: rs(context, 16),
-                  height: rs(context, 16),
-                  decoration: BoxDecoration(
-                    color: online ? AppColors.success : AppColors.error,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ),
-            SizedBox(width: rs(context, 16)),
-            // Status Text
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Availability Status',
-                    style: AppTextStyles.caption(context).copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: rs(context, 4)),
-                  Text(
-                    online ? 'ONLINE' : 'OFFLINE',
-                    style: AppTextStyles.heading4(context).copyWith(
-                      fontSize: rs(context, 18),
-                      fontWeight: FontWeight.bold,
-                      color: online ? AppColors.success : AppColors.error,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Toggle Switch
-            Switch(
-              value: online,
-              onChanged: (value) {
-                controller.toggleStatus(value);
-                CustomSnackbar.showSuccess(
-                  'Status Updated',
-                  value ? 'You are now Online!' : 'You are now Offline',
-                );
-              },
-              activeColor: AppColors.success,
-              activeTrackColor: AppColors.success.withOpacity(0.5),
-              inactiveThumbColor: AppColors.error,
-              inactiveTrackColor: AppColors.error.withOpacity(0.5),
-            ),
-          ],
-        );
-      }),
-    );
-  }
-
-  /// ================= PERFORMANCE CARDS =================
-  Widget _buildPerformanceCards(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: rs(context, 20)),
-      child: Row(
-        children: [
-          // Rating Card
-          Expanded(
-            child: _buildMetricCard(
-              context: context,
-              icon: Icons.star_rounded,
-              title: 'Rating',
-              value: '4.7',
-              color: AppColors.secondary,
-            ),
-          ),
-          SizedBox(width: rs(context, 12)),
-          // Jobs Completed Card
-          Expanded(
-            child: Obx(() => _buildMetricCard(
-              context: context,
-              icon: Icons.check_circle_rounded,
-              title: 'Jobs Done',
-              value: controller.completedJobsCount.value.toString(),
-              color: AppColors.primary,
-            )),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMetricCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return CustomContainer(
-      padding: EdgeInsets.all(rs(context, 16)),
-      backgroundColor: AppColors.white,
-      borderRadius: AppRadii.card(context),
-      border: Border.all(
-        color: color.withOpacity(0.2),
-        width: rs(context, 1.5),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: color.withOpacity(0.08),
-          blurRadius: rs(context, 10),
-          offset: Offset(0, rs(context, 2)),
-        ),
-      ],
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.all(rs(context, 10)),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(rs(context, 12)),
-            ),
-            child: Icon(icon, color: color, size: rs(context, 26)),
-          ),
-          SizedBox(height: rs(context, 12)),
-          Text(
-            value,
-            style: AppTextStyles.heading3(context).copyWith(
-              fontSize: rs(context, 24),
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          SizedBox(height: rs(context, 4)),
-          Text(
-            title,
-            style: AppTextStyles.caption(context).copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   /// ================= QUICK ACTIONS =================
   Widget _buildQuickActions(BuildContext context) {
     return CustomContainer(
@@ -348,10 +184,7 @@ class ProfileView extends GetView<ProfileController> {
       padding: EdgeInsets.all(rs(context, 16)),
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
-      border: Border.all(
-        color: AppColors.border,
-        width: rs(context, 1),
-      ),
+      border: Border.all(color: AppColors.border, width: rs(context, 1)),
       boxShadow: [
         BoxShadow(
           color: AppColors.black.withOpacity(0.04),
@@ -382,14 +215,55 @@ class ProfileView extends GetView<ProfileController> {
                 ),
               ),
               SizedBox(width: rs(context, 12)),
+
               Expanded(
-                child: _buildActionButton(
-                  context: context,
-                  icon: Icons.edit_rounded,
-                  label: 'Edit Profile',
-                  color: AppColors.secondary,
-                  onTap: () => CustomSnackbar.showInfo('Info', 'Coming Soon'),
-                ),
+                child: Obx(() {
+                  final rating = (controller.worker["rating"] ?? 0.0).toDouble();
+
+                  return CustomContainer(
+                    padding: EdgeInsets.symmetric(vertical: rs(context, 18)),
+                    backgroundColor: Colors.amber.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(rs(context, 12)),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.3),
+                      width: rs(context, 1),
+                    ),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.star_rounded,
+                            color: Colors.amber,
+                            size: rs(context, 28),
+                          ),
+                          SizedBox(width: rs(context, 18)),
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                rating.toStringAsFixed(2),
+                                style: AppTextStyles.bodyMedium(context).copyWith(
+                                  color: Colors.amber[800],
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: rs(context, 0)),
+                              Text(
+                                "Rating",
+                                style: AppTextStyles.caption(context).copyWith(
+                                  color: AppColors.primary.withOpacity(0.8),
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
               ),
             ],
           ),
@@ -440,10 +314,7 @@ class ProfileView extends GetView<ProfileController> {
       width: double.infinity,
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
-      border: Border.all(
-        color: AppColors.border,
-        width: rs(context, 1),
-      ),
+      border: Border.all(color: AppColors.border, width: rs(context, 1)),
       boxShadow: [
         BoxShadow(
           color: AppColors.black.withOpacity(0.04),
@@ -474,20 +345,16 @@ class ProfileView extends GetView<ProfileController> {
             icon: Icons.history_rounded,
             title: 'Leave History',
             subtitle: 'Check Your Leave History',
-            onTap: () {
-              Get.toNamed(Routes.LEAVEHISTORY);
-            },
+            onTap: () => Get.toNamed(Routes.LEAVEHISTORY),
           ),
-          _buildDivider(context),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.lock_outline_rounded,
-            title: 'Change Password',
-            subtitle: 'Update your password',
-            onTap: () {
-              Get.toNamed(Routes.PASSWORDCHANGE);
-            },
-          ),
+          // _buildDivider(context),
+          // _buildSettingsTile(
+          //   context: context,
+          //   icon: Icons.lock_outline_rounded,
+          //   title: 'Change Password',
+          //   subtitle: 'Update your password',
+          //   onTap: () => Get.toNamed(Routes.PASSWORDCHANGE),
+          // ),
           _buildDivider(context),
           _buildSettingsTile(
             context: context,
@@ -496,14 +363,14 @@ class ProfileView extends GetView<ProfileController> {
             subtitle: 'Manage notification settings',
             onTap: () => CustomSnackbar.showInfo('Info', 'Coming Soon'),
           ),
-          _buildDivider(context),
-          _buildSettingsTile(
-            context: context,
-            icon: Icons.help_outline_rounded,
-            title: 'Help & Support',
-            subtitle: 'Get help or contact us',
-            onTap: () => CustomSnackbar.showInfo('Info', 'Coming Soon'),
-          ),
+          // _buildDivider(context),
+          // _buildSettingsTile(
+          //   context: context,
+          //   icon: Icons.help_outline_rounded,
+          //   title: 'Help & Support',
+          //   subtitle: 'Get help or contact us',
+          //   onTap: () => CustomSnackbar.showInfo('Info', 'Coming Soon'),
+          // ),
         ],
       ),
     );
@@ -550,10 +417,7 @@ class ProfileView extends GetView<ProfileController> {
                     ),
                   ),
                   SizedBox(height: rs(context, 2)),
-                  Text(
-                    subtitle,
-                    style: AppTextStyles.caption(context),
-                  ),
+                  Text(subtitle, style: AppTextStyles.caption(context)),
                 ],
               ),
             ),

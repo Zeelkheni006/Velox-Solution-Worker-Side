@@ -51,7 +51,6 @@ class OrderDetailsController extends GetxController {
   var orderIsFinal = false.obs;
   String get finalOrderStatus => order.value?.orderStatus ?? '';
 
-  // ── FIX: single flag to prevent duplicate bottom sheet ──
   bool _otpSheetScheduled = false;
 
   @override
@@ -67,9 +66,52 @@ class OrderDetailsController extends GetxController {
     await checkOtpStateOnLoad();
   }
 
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
+  // NEW: Pull-to-Refresh handler
+  // Silently refreshes order details + status without full screen loader.
+  // Called by RefreshIndicator's onRefresh callback.
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Future<void> refreshOrder() async {
+    try {
+      // Fetch order details silently (no loader — RefreshIndicator is the UI)
+      final response = await OrderApi.getOrderDetails(orderId);
+      print("REFRESH ORDER DETAILS ::: $response");
+      if (response['success'] == true && response['data'] != null) {
+        order.value = OrderModel.fromJson(response['data']);
+      }
+
+      // Re-check order status
+      final res = await OrderStatus.workerOrderStatus(orderId);
+      print("REFRESH ORDER STATUS ::: $res");
+
+      if (res['success'] == true) {
+        final otpVerified = res['message']?['otp_verified'] ?? false;
+        final orderStatus = res['message']?['order_status'] ?? '';
+        final serviceCompleted = orderStatus == 'service_completed';
+
+        if (orderStatus == 'closed' || orderStatus == 'cancelled') {
+          orderIsFinal(true);
+          isOtpVerified.value = otpVerified;
+          return;
+        }
+
+        isOtpVerified.value = otpVerified;
+
+        if (serviceCompleted && isPaymentUnpaid) {
+          orderServiceCompleted(true);
+        }
+      }
+    } catch (e) {
+      print("REFRESH ORDER ERROR ::: $e");
+      // Show a gentle snackbar on failure but don't crash
+      CustomSnackbar.showError("Refresh Failed", "Could not refresh order. Please try again.");
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
   // OTP Sheet scheduling — single entry point
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
 
   void scheduleOtpSheet(BuildContext context) {
     if (_otpSheetScheduled) return;
@@ -92,9 +134,9 @@ class OrderDetailsController extends GetxController {
     _onOpenOtpSheet = callback;
   }
 
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
   // Image capture
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
 
   Future<bool> captureImageAtSlot(int slotIndex) async {
     try {
@@ -176,9 +218,9 @@ class OrderDetailsController extends GetxController {
     capturedImages.assignAll(List.filled(maxImageCount, null));
   }
 
-  // ============================================================
-  // Complete / Close / CANCEL order
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
+  // Complete / Close / Cancel order
+  // ══════════════════════════════════════════════════════════════════════════
 
   Future<void> completeOrder() async {
     final originalImages = capturedImages.whereType<File>().toList();
@@ -316,9 +358,6 @@ class OrderDetailsController extends GetxController {
     }
   }
 
-  // ── NEW: Cancel order by worker ──────────────────────────────────────────
-  /// Only callable after [isOtpVerified] is true.
-  /// Sends order_id, note, visiting_fee to the cancel endpoint.
   Future<void> cancelOrder({
     required String note,
     required double visitingFee,
@@ -363,9 +402,9 @@ class OrderDetailsController extends GetxController {
     }
   }
 
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
   // API calls
-  // ============================================================
+  // ══════════════════════════════════════════════════════════════════════════
 
   Future<void> fetchOrderDetails() async {
     try {

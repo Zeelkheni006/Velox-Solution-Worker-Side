@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../../core/api/Api_Service/Addon_Item/addon_item_model.dart';
 import '../../../../core/constants/app_assets.dart';
@@ -22,12 +23,33 @@ class OrderDetailsPage extends StatelessWidget {
     return GetX<OrderDetailsController>(
       init: OrderDetailsController(orderId),
       builder: (controller) {
+        // ── Shimmer Loading State ──────────────────────────────────────────
         if (controller.isLoading.value) {
           return Scaffold(
-            backgroundColor: AppColors.surface,
-            body: Center(
-              child: CircularProgressIndicator(color: AppColors.primary),
+            backgroundColor: AppColors.background,
+            appBar: AppBar(
+              backgroundColor: AppColors.appbar,
+              elevation: 0,
+              centerTitle: true,
+              leading: Padding(
+                padding: EdgeInsets.all(rs(context, 8)),
+                child: CircleAvatar(
+                  radius: rs(context, 20),
+                  backgroundColor: AppColors.black.withOpacity(0.15),
+                  child: IconButton(
+                    icon: Icon(
+                      Icons.arrow_back_ios_new_outlined,
+                      color: AppColors.black,
+                      size: rs(context, 18),
+                    ),
+                    onPressed: () => Get.back(),
+                  ),
+                ),
+              ),
+              title: Text("Order Details",
+                  style: AppTextStyles.heading3(context)),
             ),
+            body: _ShimmerOrderDetails(context: context),
           );
         }
 
@@ -64,125 +86,143 @@ class OrderDetailsPage extends StatelessWidget {
         final bool canVerifyUser = canCall && canNavigate;
 
         return Scaffold(
-          backgroundColor: AppColors.surface,
           resizeToAvoidBottomInset: false,
+          backgroundColor: AppColors.background,
           appBar: AppBar(
             backgroundColor: AppColors.appbar,
             elevation: 0,
-            scrolledUnderElevation: 0,
-            surfaceTintColor: Colors.transparent,
             centerTitle: true,
-            title: Text(
-              "Order Details",
-              style: AppTextStyles.heading4(context),
-            ),
-            leading: IconButton(
-              icon: Icon(
-                Icons.arrow_back_ios_new,
-                size: rs(context, 20),
-                color: AppColors.textPrimary,
+            leading: Padding(
+              padding: EdgeInsets.all(rs(context, 8)),
+              child: CircleAvatar(
+                radius: rs(context, 20),
+                backgroundColor: AppColors.black.withOpacity(0.15),
+                child: IconButton(
+                  icon: Icon(
+                    Icons.arrow_back_ios_new_outlined,
+                    color: AppColors.black,
+                    size: rs(context, 18),
+                  ),
+                  onPressed: () => Get.back(),
+                ),
               ),
-              onPressed: Get.back,
             ),
+            title: Text("Order Details",
+                style: AppTextStyles.heading3(context)),
           ),
           body: Stack(
             children: [
-              SingleChildScrollView(
-                child: Padding(
-                  padding: EdgeInsets.only(bottom: rs(context, 110)),
-                  child: Column(
-                    children: [
-                      // ── Hero Header ──────────────────────────────────────
-                      CustomContainer(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(rs(context, 16)),
-                        backgroundColor: AppColors.primary,
-                        borderRadius: BorderRadius.only(
-                          bottomLeft: Radius.circular(rs(context, 24)),
-                          bottomRight: Radius.circular(rs(context, 24)),
-                        ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: _infoCard(
-                                context,
-                                icon: Icons.schedule_rounded,
-                                label: "Time Slot",
-                                value: order.slotTime.split(' - ').first.trim(),
+              // ── Pull-to-Refresh Wrapper ───────────────────────────────
+              RefreshIndicator(
+                color: AppColors.primary,
+                backgroundColor: AppColors.surface,
+                displacement: rs(context, 40),
+                strokeWidth: 2.5,
+                onRefresh: () => controller.refreshOrder(),
+                child: SingleChildScrollView(
+                  // physics must be AlwaysScrollable for pull-to-refresh
+                  // to trigger even when content is shorter than screen
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: rs(context, 110)),
+                    child: Column(
+                      children: [
+                        // ── Hero Header ──────────────────────────────────
+                        CustomContainer(
+                          width: double.infinity,
+                          padding: EdgeInsets.all(rs(context, 16)),
+                          backgroundColor: AppColors.primary,
+                          borderRadius: BorderRadius.only(
+                            bottomLeft:
+                            Radius.circular(rs(context, 24)),
+                            bottomRight:
+                            Radius.circular(rs(context, 24)),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: _infoCard(
+                                  context,
+                                  icon: Icons.schedule_rounded,
+                                  label: "Time Slot",
+                                  value: order.slotTime
+                                      .split(' - ')
+                                      .first
+                                      .trim(),
+                                ),
                               ),
-                            ),
-                            SizedBox(width: rs(context, 10)),
-                            Expanded(
-                              child: _infoCard(
-                                context,
-                                icon: Icons.calendar_month_rounded,
-                                label: "Service Date",
-                                value: order.serviceDate,
+                              SizedBox(width: rs(context, 10)),
+                              Expanded(
+                                child: _infoCard(
+                                  context,
+                                  icon: Icons.calendar_month_rounded,
+                                  label: "Service Date",
+                                  value: order.serviceDate,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
 
-                      SizedBox(height: rs(context, 20)),
+                        SizedBox(height: rs(context, 20)),
 
-                      Padding(
-                        padding:
-                        EdgeInsets.symmetric(horizontal: rs(context, 16)),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _section(
-                              context,
-                              title: "Payment Status",
-                              icon: Icons.payment_rounded,
-                              child: _paymentCard(context, order),
-                            ),
-                            SizedBox(height: rs(context, 20)),
-                            _section(
-                              context,
-                              title: "Customer Contact",
-                              icon: Icons.person_rounded,
-                              child: _contactCard(
-                                  context, phoneText, cleanPhone, canCall),
-                            ),
-                            SizedBox(height: rs(context, 20)),
-                            _section(
-                              context,
-                              title: "Service Location",
-                              icon: Icons.location_on_rounded,
-                              child: _locationCard(
-                                  context, addressText, canNavigate, address),
-                            ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                              horizontal: rs(context, 16)),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _section(
+                                context,
+                                title: "Payment Status",
+                                icon: Icons.payment_rounded,
+                                child: _paymentCard(context, order),
+                              ),
+                              SizedBox(height: rs(context, 20)),
+                              _section(
+                                context,
+                                title: "Customer Contact",
+                                icon: Icons.person_rounded,
+                                child: _contactCard(context, phoneText,
+                                    cleanPhone, canCall),
+                              ),
+                              SizedBox(height: rs(context, 20)),
+                              _section(
+                                context,
+                                title: "Service Location",
+                                icon: Icons.location_on_rounded,
+                                child: _locationCard(context, addressText,
+                                    canNavigate, address),
+                              ),
 
-                            // ── Addon Module — only after OTP verified ───
-                            Obx(() {
-                              if (!controller.isOtpVerified.value) {
-                                return const SizedBox.shrink();
-                              }
-                              if (controller.orderIsFinal.value) {
-                                return const SizedBox.shrink();
-                              }
-                              return Column(
-                                children: [
-                                  SizedBox(height: rs(context, 20)),
-                                  _addonSection(context, controller),
-                                ],
-                              );
-                            }),
+                              // ── Addon Module ─────────────────────────
+                              Obx(() {
+                                if (!controller.isOtpVerified.value) {
+                                  return const SizedBox.shrink();
+                                }
+                                if (controller.orderIsFinal.value) {
+                                  return const SizedBox.shrink();
+                                }
+                                return Column(
+                                  children: [
+                                    SizedBox(height: rs(context, 20)),
+                                    _addonSection(context, controller),
+                                  ],
+                                );
+                              }),
 
-                            SizedBox(height: rs(context, 300)),
-                          ],
+                              SizedBox(height: rs(context, 300)),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
 
-              // ── Floating Bottom Bar ──────────────────────────────────────
+              // ── Floating Bottom Bar ──────────────────────────────────
               Obx(() {
-                // ── 1. Order is final (closed / cancelled) ─────────────────
                 if (controller.orderIsFinal.value) {
                   final isCancelled =
                       controller.finalOrderStatus == 'cancelled';
@@ -196,8 +236,8 @@ class OrderDetailsPage extends StatelessWidget {
                       borderRadius: AppRadii.button(context),
                       child: CustomContainer(
                         width: double.infinity,
-                        padding:
-                        EdgeInsets.symmetric(vertical: rs(context, 14)),
+                        padding: EdgeInsets.symmetric(
+                            vertical: rs(context, 14)),
                         backgroundColor: isCancelled
                             ? AppColors.error.withOpacity(0.12)
                             : AppColors.success.withOpacity(0.12),
@@ -220,7 +260,9 @@ class OrderDetailsPage extends StatelessWidget {
                             ),
                             SizedBox(width: rs(context, 8)),
                             Text(
-                              isCancelled ? "Order Cancelled" : "Order Closed",
+                              isCancelled
+                                  ? "Order Cancelled"
+                                  : "Order Closed",
                               style: AppTextStyles.buttonMedium(context)
                                   .copyWith(
                                 fontWeight: FontWeight.w700,
@@ -236,7 +278,6 @@ class OrderDetailsPage extends StatelessWidget {
                   );
                 }
 
-                // ── 2. Service done, payment pending → show Close Order ────
                 if (controller.orderServiceCompleted.value &&
                     controller.isPaymentUnpaid) {
                   return Positioned(
@@ -255,7 +296,6 @@ class OrderDetailsPage extends StatelessWidget {
                   );
                 }
 
-                // ── 3. OTP verified → show Work Actions + Cancel ───────────
                 if (controller.isOtpVerified.value) {
                   return Positioned(
                     bottom: 0,
@@ -273,7 +313,6 @@ class OrderDetailsPage extends StatelessWidget {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          // ── Primary: Capture photos / Complete order ───
                           GestureDetector(
                             onTap: () => _showImageCaptureBottomSheet(
                                 context, controller),
@@ -289,27 +328,24 @@ class OrderDetailsPage extends StatelessWidget {
                                   : "Capture Order Photos",
                             ),
                           ),
-
                           SizedBox(height: rs(context, 10)),
-
-                          // ── Secondary row: Reschedule + Cancel ────────
                           Row(
                             children: [
-                              // Reschedule
                               Expanded(
                                 child: GestureDetector(
-                                  onTap: () => RescheduleBottomSheet.show(
-                                      context,
-                                      controller: controller),
+                                  onTap: () =>
+                                      RescheduleBottomSheet.show(context,
+                                          controller: controller),
                                   child: CustomContainer(
                                     width: double.infinity,
                                     padding: EdgeInsets.symmetric(
                                         vertical: rs(context, 13)),
                                     backgroundColor: Colors.transparent,
-                                    borderRadius: AppRadii.button(context),
+                                    borderRadius:
+                                    AppRadii.button(context),
                                     border: Border.all(
-                                      color:
-                                      AppColors.warning.withOpacity(0.55),
+                                      color: AppColors.warning
+                                          .withOpacity(0.55),
                                       width: 1.5,
                                     ),
                                     child: Row(
@@ -324,8 +360,8 @@ class OrderDetailsPage extends StatelessWidget {
                                         SizedBox(width: rs(context, 6)),
                                         Text(
                                           "Reschedule",
-                                          style:
-                                          AppTextStyles.buttonMedium(context)
+                                          style: AppTextStyles
+                                              .buttonMedium(context)
                                               .copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.warning,
@@ -336,22 +372,22 @@ class OrderDetailsPage extends StatelessWidget {
                                   ),
                                 ),
                               ),
-
                               SizedBox(width: rs(context, 10)),
-
-                              // ── NEW: Cancel Order ──────────────────────
                               Expanded(
                                 child: GestureDetector(
-                                  onTap: () => _showCancelOrderBottomSheet(
-                                      context, controller),
+                                  onTap: () =>
+                                      _showCancelOrderBottomSheet(
+                                          context, controller),
                                   child: CustomContainer(
                                     width: double.infinity,
                                     padding: EdgeInsets.symmetric(
                                         vertical: rs(context, 13)),
                                     backgroundColor: Colors.transparent,
-                                    borderRadius: AppRadii.button(context),
+                                    borderRadius:
+                                    AppRadii.button(context),
                                     border: Border.all(
-                                      color: AppColors.error.withOpacity(0.55),
+                                      color: AppColors.error
+                                          .withOpacity(0.55),
                                       width: 1.5,
                                     ),
                                     child: Row(
@@ -366,8 +402,8 @@ class OrderDetailsPage extends StatelessWidget {
                                         SizedBox(width: rs(context, 6)),
                                         Text(
                                           "Cancel",
-                                          style:
-                                          AppTextStyles.buttonMedium(context)
+                                          style: AppTextStyles
+                                              .buttonMedium(context)
                                               .copyWith(
                                             fontWeight: FontWeight.w600,
                                             color: AppColors.error,
@@ -386,7 +422,6 @@ class OrderDetailsPage extends StatelessWidget {
                   );
                 }
 
-                // ── 4. OTP sheet open — hide main button ───────────────────
                 if (controller.showOtpField.value) {
                   WidgetsBinding.instance.addPostFrameCallback((_) {
                     if (!(Get.isBottomSheetOpen == true) &&
@@ -397,7 +432,6 @@ class OrderDetailsPage extends StatelessWidget {
                   return const SizedBox.shrink();
                 }
 
-                // ── 5. Default: VERIFY USER button ─────────────────────────
                 return Positioned(
                   bottom: 0,
                   left: 0,
@@ -434,7 +468,155 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // NEW: Cancel Order Bottom Sheet
+  // SHIMMER SKELETON WIDGET
+  // ══════════════════════════════════════════════════════════════════════════
+
+  Widget _ShimmerOrderDetails({required BuildContext context}) {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      period: const Duration(milliseconds: 1200),
+      child: SingleChildScrollView(
+        physics: const NeverScrollableScrollPhysics(),
+        child: Column(
+          children: [
+            // Hero Header Shimmer
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(rs(context, 16)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(rs(context, 24)),
+                  bottomRight: Radius.circular(rs(context, 24)),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(child: _shimmerInfoCard(context)),
+                  SizedBox(width: rs(context, 10)),
+                  Expanded(child: _shimmerInfoCard(context)),
+                ],
+              ),
+            ),
+
+            SizedBox(height: rs(context, 20)),
+
+            Padding(
+              padding:
+              EdgeInsets.symmetric(horizontal: rs(context, 16)),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Payment shimmer
+                  _shimmerSectionTitle(context),
+                  SizedBox(height: rs(context, 10)),
+                  _shimmerCard(context, height: rs(context, 68)),
+
+                  SizedBox(height: rs(context, 24)),
+
+                  // Contact shimmer
+                  _shimmerSectionTitle(context),
+                  SizedBox(height: rs(context, 10)),
+                  _shimmerCard(context, height: rs(context, 120)),
+
+                  SizedBox(height: rs(context, 24)),
+
+                  // Location shimmer
+                  _shimmerSectionTitle(context),
+                  SizedBox(height: rs(context, 10)),
+                  _shimmerCard(context, height: rs(context, 130)),
+
+                  SizedBox(height: rs(context, 24)),
+
+                  // Addon shimmer block
+                  _shimmerCard(context, height: rs(context, 56)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _shimmerInfoCard(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(rs(context, 12)),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(rs(context, 14)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: rs(context, 24),
+            height: rs(context, 24),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(height: rs(context, 6)),
+          Container(
+            width: rs(context, 60),
+            height: rs(context, 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(rs(context, 4)),
+            ),
+          ),
+          SizedBox(height: rs(context, 4)),
+          Container(
+            width: rs(context, 80),
+            height: rs(context, 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(rs(context, 4)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _shimmerSectionTitle(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: rs(context, 42),
+          height: rs(context, 42),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(rs(context, 12)),
+          ),
+        ),
+        SizedBox(width: rs(context, 8)),
+        Container(
+          width: rs(context, 120),
+          height: rs(context, 16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(rs(context, 6)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _shimmerCard(BuildContext context, {required double height}) {
+    return Container(
+      width: double.infinity,
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(rs(context, 14)),
+      ),
+    );
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // Cancel Order Bottom Sheet
   // ══════════════════════════════════════════════════════════════════════════
 
   void _showCancelOrderBottomSheet(
@@ -446,7 +628,6 @@ class OrderDetailsPage extends StatelessWidget {
     final RxBool isNoteValid = false.obs;
     final RxString feeError = ''.obs;
 
-    // Quick-select visiting fee chips
     const List<double> quickFees = [0, 100, 150, 200, 250, 300];
 
     showModalBottomSheet(
@@ -458,7 +639,6 @@ class OrderDetailsPage extends StatelessWidget {
       barrierColor: Colors.black54,
       builder: (sheetContext) {
         return Padding(
-          // Lift sheet above keyboard
           padding: EdgeInsets.only(
               bottom: MediaQuery.of(sheetContext).viewInsets.bottom),
           child: DraggableScrollableSheet(
@@ -477,7 +657,6 @@ class OrderDetailsPage extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    // ── Handle ───────────────────────────────────────
                     Padding(
                       padding: EdgeInsets.only(top: rs(context, 12)),
                       child: CustomContainer(
@@ -485,11 +664,10 @@ class OrderDetailsPage extends StatelessWidget {
                         height: rs(context, 4),
                         backgroundColor:
                         AppColors.textSecondary.withOpacity(0.3),
-                        borderRadius: BorderRadius.circular(rs(context, 10)),
+                        borderRadius:
+                        BorderRadius.circular(rs(context, 10)),
                       ),
                     ),
-
-                    // ── Header ───────────────────────────────────────
                     Padding(
                       padding: EdgeInsets.fromLTRB(
                         rs(context, 20),
@@ -501,7 +679,8 @@ class OrderDetailsPage extends StatelessWidget {
                         children: [
                           CustomContainer(
                             padding: EdgeInsets.all(rs(context, 10)),
-                            backgroundColor: AppColors.error.withOpacity(0.1),
+                            backgroundColor:
+                            AppColors.error.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(100),
                             child: Icon(
                               Icons.cancel_outlined,
@@ -517,12 +696,15 @@ class OrderDetailsPage extends StatelessWidget {
                                 Text(
                                   "Cancel Order",
                                   style: AppTextStyles.heading4(context)
-                                      .copyWith(fontWeight: FontWeight.bold),
+                                      .copyWith(
+                                      fontWeight: FontWeight.bold),
                                 ),
                                 Text(
                                   "Provide reason & visiting fee",
                                   style: AppTextStyles.bodySmall(context)
-                                      .copyWith(color: AppColors.textSecondary),
+                                      .copyWith(
+                                      color:
+                                      AppColors.textSecondary),
                                 ),
                               ],
                             ),
@@ -530,13 +712,10 @@ class OrderDetailsPage extends StatelessWidget {
                         ],
                       ),
                     ),
-
                     Divider(
                       height: rs(context, 20),
                       color: AppColors.textSecondary.withOpacity(0.1),
                     ),
-
-                    // ── Scrollable body ───────────────────────────────
                     Flexible(
                       child: SingleChildScrollView(
                         controller: scrollController,
@@ -549,8 +728,6 @@ class OrderDetailsPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-
-                            // ── Note ──────────────────────────────────
                             Text(
                               "Cancellation Reason *",
                               style: AppTextStyles.bodyMedium(context)
@@ -569,14 +746,17 @@ class OrderDetailsPage extends StatelessWidget {
                                 maxLines: 4,
                                 maxLength: 300,
                                 onChanged: (v) {
-                                  isNoteValid.value = v.trim().length >= 10;
+                                  isNoteValid.value =
+                                      v.trim().length >= 10;
                                 },
                                 style: AppTextStyles.bodyMedium(context)
-                                    .copyWith(color: AppColors.textPrimary),
+                                    .copyWith(
+                                    color: AppColors.textPrimary),
                                 decoration: InputDecoration(
                                   hintText:
                                   "Explain why you are cancelling (min 10 characters)...",
-                                  hintStyle: AppTextStyles.bodySmall(context)
+                                  hintStyle:
+                                  AppTextStyles.bodySmall(context)
                                       .copyWith(
                                     color: AppColors.textSecondary
                                         .withOpacity(0.6),
@@ -584,18 +764,16 @@ class OrderDetailsPage extends StatelessWidget {
                                   border: InputBorder.none,
                                   contentPadding:
                                   EdgeInsets.all(rs(context, 14)),
-                                  counterStyle:
-                                  AppTextStyles.bodySmall(context).copyWith(
+                                  counterStyle: AppTextStyles.bodySmall(
+                                      context)
+                                      .copyWith(
                                     color: AppColors.textSecondary
                                         .withOpacity(0.5),
                                   ),
                                 ),
                               ),
                             ),
-
                             SizedBox(height: rs(context, 10)),
-
-                            // ── Visiting Fee ──────────────────────────
                             Text(
                               "Visiting Fee (₹)",
                               style: AppTextStyles.bodyMedium(context)
@@ -605,11 +783,10 @@ class OrderDetailsPage extends StatelessWidget {
                             Text(
                               "Amount to collect from customer for the visit",
                               style: AppTextStyles.bodySmall(context)
-                                  .copyWith(color: AppColors.textSecondary),
+                                  .copyWith(
+                                  color: AppColors.textSecondary),
                             ),
                             SizedBox(height: rs(context, 10)),
-
-                            // Quick-select fee chips
                             Obx(() => Wrap(
                               spacing: rs(context, 8),
                               runSpacing: rs(context, 8),
@@ -617,10 +794,11 @@ class OrderDetailsPage extends StatelessWidget {
                                 final isSelected =
                                     visitingFee.value == fee;
                                 return GestureDetector(
-                                  onTap: () => visitingFee.value = fee,
+                                  onTap: () =>
+                                  visitingFee.value = fee,
                                   child: AnimatedContainer(
-                                    duration:
-                                    const Duration(milliseconds: 180),
+                                    duration: const Duration(
+                                        milliseconds: 180),
                                     padding: EdgeInsets.symmetric(
                                       horizontal: rs(context, 16),
                                       vertical: rs(context, 9),
@@ -629,7 +807,8 @@ class OrderDetailsPage extends StatelessWidget {
                                       color: isSelected
                                           ? AppColors.error
                                           : AppColors.white,
-                                      borderRadius: BorderRadius.circular(
+                                      borderRadius:
+                                      BorderRadius.circular(
                                           rs(context, 10)),
                                       border: Border.all(
                                         color: isSelected
@@ -642,8 +821,8 @@ class OrderDetailsPage extends StatelessWidget {
                                       fee == 0
                                           ? "₹0 (Free)"
                                           : "₹${fee.toInt()}",
-                                      style:
-                                      AppTextStyles.bodySmall(context)
+                                      style: AppTextStyles.bodySmall(
+                                          context)
                                           .copyWith(
                                         color: isSelected
                                             ? AppColors.white
@@ -657,16 +836,13 @@ class OrderDetailsPage extends StatelessWidget {
                                 );
                               }).toList(),
                             )),
-
                             SizedBox(height: rs(context, 12)),
-
-                            // Custom fee text field
                             CustomContainer(
                               backgroundColor: AppColors.white,
                               borderRadius: AppRadii.card(context),
                               border: Border.all(
-                                color:
-                                AppColors.textSecondary.withOpacity(0.2),
+                                color: AppColors.textSecondary
+                                    .withOpacity(0.2),
                                 width: 1.5,
                               ),
                               child: TextField(
@@ -683,14 +859,17 @@ class OrderDetailsPage extends StatelessWidget {
                                     visitingFee.value = parsed;
                                     feeError.value = '';
                                   } else {
-                                    feeError.value = 'Enter a valid amount';
+                                    feeError.value =
+                                    'Enter a valid amount';
                                   }
                                 },
                                 style: AppTextStyles.bodyMedium(context)
-                                    .copyWith(color: AppColors.textPrimary),
+                                    .copyWith(
+                                    color: AppColors.textPrimary),
                                 decoration: InputDecoration(
                                   hintText: "Or type a custom amount...",
-                                  hintStyle: AppTextStyles.bodySmall(context)
+                                  hintStyle:
+                                  AppTextStyles.bodySmall(context)
                                       .copyWith(
                                     color: AppColors.textSecondary
                                         .withOpacity(0.6),
@@ -721,8 +900,6 @@ class OrderDetailsPage extends StatelessWidget {
                                 ),
                               ),
                             ),
-
-                            // Fee validation error
                             Obx(() => feeError.value.isNotEmpty
                                 ? Padding(
                               padding: EdgeInsets.only(
@@ -730,19 +907,18 @@ class OrderDetailsPage extends StatelessWidget {
                                   left: rs(context, 4)),
                               child: Text(
                                 feeError.value,
-                                style: AppTextStyles.bodySmall(context)
-                                    .copyWith(color: AppColors.error),
+                                style: AppTextStyles.bodySmall(
+                                    context)
+                                    .copyWith(
+                                    color: AppColors.error),
                               ),
                             )
                                 : const SizedBox.shrink()),
-
                             SizedBox(height: rs(context, 24)),
                           ],
                         ),
                       ),
                     ),
-
-                    // ── Bottom action bar ────────────────────────────
                     Container(
                       padding: EdgeInsets.fromLTRB(
                         rs(context, 16),
@@ -754,45 +930,50 @@ class OrderDetailsPage extends StatelessWidget {
                         color: AppColors.surface,
                         border: Border(
                           top: BorderSide(
-                            color: AppColors.textSecondary.withOpacity(0.1),
+                            color:
+                            AppColors.textSecondary.withOpacity(0.1),
                           ),
                         ),
                       ),
                       child: Row(
                         children: [
-                          // Confirm Cancel
                           Expanded(
                             child: Obx(() {
                               final canSubmit = isNoteValid.value &&
                                   feeError.value.isEmpty;
-
                               return GestureDetector(
                                 onTap: canSubmit
                                     ? () async {
-                                  if (Get.isBottomSheetOpen == true) {
-                                    Get.back(); // close sheet safely
+                                  if (Get.isBottomSheetOpen ==
+                                      true) {
+                                    Get.back();
                                   }
-
-                                  await Future.delayed(const Duration(milliseconds: 300));
-
+                                  await Future.delayed(const Duration(
+                                      milliseconds: 300));
                                   await controller.cancelOrder(
-                                    note: controller.cancelNoteController.text.trim(),
+                                    note: controller
+                                        .cancelNoteController.text
+                                        .trim(),
                                     visitingFee: visitingFee.value,
                                   );
                                 }
                                     : null,
                                 child: AnimatedContainer(
-                                  duration: const Duration(milliseconds: 220),
+                                  duration:
+                                  const Duration(milliseconds: 220),
                                   padding: EdgeInsets.symmetric(
                                       vertical: rs(context, 15)),
                                   decoration: BoxDecoration(
                                     color: canSubmit
                                         ? AppColors.error
-                                        : AppColors.error.withOpacity(0.35),
-                                    borderRadius: AppRadii.button(context),
+                                        : AppColors.error
+                                        .withOpacity(0.35),
+                                    borderRadius:
+                                    AppRadii.button(context),
                                   ),
                                   child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    mainAxisAlignment:
+                                    MainAxisAlignment.center,
                                     children: [
                                       Icon(
                                         Icons.cancel_outlined,
@@ -802,8 +983,8 @@ class OrderDetailsPage extends StatelessWidget {
                                       SizedBox(width: rs(context, 8)),
                                       Text(
                                         "Confirm Cancel",
-                                        style:
-                                        AppTextStyles.buttonMedium(context)
+                                        style: AppTextStyles.buttonMedium(
+                                            context)
                                             .copyWith(
                                           color: Colors.white,
                                           fontWeight: FontWeight.w700,
@@ -829,7 +1010,7 @@ class OrderDetailsPage extends StatelessWidget {
   }
 
   // ══════════════════════════════════════════════════════════════════════════
-  // ADDON SECTION  — search + add + current list with remove
+  // ADDON SECTION
   // ══════════════════════════════════════════════════════════════════════════
 
   Widget _addonSection(
@@ -842,7 +1023,6 @@ class OrderDetailsPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── Tappable Section header ───────────────────────────────────────
         GestureDetector(
           onTap: () => addonCtrl.isAddonExpanded.toggle(),
           child: CustomContainer(
@@ -852,7 +1032,8 @@ class OrderDetailsPage extends StatelessWidget {
             ),
             backgroundColor: AppColors.white,
             borderRadius: AppRadii.card(context),
-            border: Border.all(color: AppColors.primary.withOpacity(0.15)),
+            border:
+            Border.all(color: AppColors.primary.withOpacity(0.15)),
             child: Obx(() => Row(
               children: [
                 _iconChip(context,
@@ -871,11 +1052,14 @@ class OrderDetailsPage extends StatelessWidget {
                       horizontal: rs(context, 10),
                       vertical: rs(context, 4),
                     ),
-                    backgroundColor: AppColors.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(rs(context, 20)),
+                    backgroundColor:
+                    AppColors.primary.withOpacity(0.1),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 20)),
                     child: Text(
                       "₹${addonCtrl.addonTotal.value.toStringAsFixed(0)}",
-                      style: AppTextStyles.bodySmall(context).copyWith(
+                      style:
+                      AppTextStyles.bodySmall(context).copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.bold,
                       ),
@@ -890,11 +1074,14 @@ class OrderDetailsPage extends StatelessWidget {
                       horizontal: rs(context, 8),
                       vertical: rs(context, 4),
                     ),
-                    backgroundColor: AppColors.success.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(rs(context, 20)),
+                    backgroundColor:
+                    AppColors.success.withOpacity(0.1),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 20)),
                     child: Text(
                       "${addonCtrl.orderAddons.length} added",
-                      style: AppTextStyles.bodySmall(context).copyWith(
+                      style:
+                      AppTextStyles.bodySmall(context).copyWith(
                         color: AppColors.success,
                         fontWeight: FontWeight.w600,
                       ),
@@ -903,7 +1090,8 @@ class OrderDetailsPage extends StatelessWidget {
                   SizedBox(width: rs(context, 8)),
                 ],
                 AnimatedRotation(
-                  turns: addonCtrl.isAddonExpanded.value ? 0.5 : 0.0,
+                  turns:
+                  addonCtrl.isAddonExpanded.value ? 0.5 : 0.0,
                   duration: const Duration(milliseconds: 250),
                   curve: Curves.easeInOut,
                   child: Icon(
@@ -916,8 +1104,6 @@ class OrderDetailsPage extends StatelessWidget {
             )),
           ),
         ),
-
-        // ── Animated collapsible body ────────────────────────────────────
         Obx(() => AnimatedSize(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,
@@ -936,7 +1122,8 @@ class OrderDetailsPage extends StatelessWidget {
                   return _centeredLoader(context);
                 }
                 if (addonCtrl.searchResults.isNotEmpty) {
-                  return _searchResultsList(context, addonCtrl);
+                  return _searchResultsList(
+                      context, addonCtrl);
                 }
                 if (addonCtrl.searchQuery.value.isNotEmpty &&
                     !addonCtrl.isSearching.value &&
@@ -949,7 +1136,8 @@ class OrderDetailsPage extends StatelessWidget {
                         "No parts found for '${addonCtrl.searchQuery.value}'",
                         style: AppTextStyles.bodySmall(context)
                             .copyWith(
-                            color: AppColors.textSecondary),
+                            color:
+                            AppColors.textSecondary),
                       ),
                     ),
                   );
@@ -971,9 +1159,10 @@ class OrderDetailsPage extends StatelessWidget {
                 if (addonCtrl.orderAddons.isEmpty) {
                   return CustomContainer(
                     width: double.infinity,
-                    padding: EdgeInsets.all(rs(context, 16)),
-                    backgroundColor:
-                    AppColors.textSecondary.withOpacity(0.05),
+                    padding:
+                    EdgeInsets.all(rs(context, 16)),
+                    backgroundColor: AppColors.textSecondary
+                        .withOpacity(0.05),
                     borderRadius: AppRadii.card(context),
                     border: Border.all(
                         color: AppColors.textSecondary
@@ -989,7 +1178,8 @@ class OrderDetailsPage extends StatelessWidget {
                         SizedBox(height: rs(context, 8)),
                         Text(
                           "No addon parts added yet",
-                          style: AppTextStyles.bodySmall(context)
+                          style: AppTextStyles.bodySmall(
+                              context)
                               .copyWith(
                               color: AppColors.textSecondary
                                   .withOpacity(0.6)),
@@ -1024,12 +1214,13 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _addonSearchBar(BuildContext context, AddonController addonCtrl) {
+  Widget _addonSearchBar(
+      BuildContext context, AddonController addonCtrl) {
     return CustomContainer(
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
-      border:
-      Border.all(color: AppColors.primary.withOpacity(0.15), width: 1.5),
+      border: Border.all(
+          color: AppColors.primary.withOpacity(0.15), width: 1.5),
       child: TextField(
         onChanged: (v) => addonCtrl.searchParts(v),
         style: AppTextStyles.bodyMedium(context)
@@ -1040,11 +1231,13 @@ class OrderDetailsPage extends StatelessWidget {
               .copyWith(color: AppColors.textSecondary.withOpacity(0.6)),
           prefixIcon: Icon(Icons.search_rounded,
               color: AppColors.primary, size: rs(context, 20)),
-          suffixIcon: Obx(() => addonCtrl.searchQuery.value.isNotEmpty
+          suffixIcon: Obx(() =>
+          addonCtrl.searchQuery.value.isNotEmpty
               ? GestureDetector(
             onTap: () => addonCtrl.clearSearch(),
             child: Icon(Icons.close_rounded,
-                color: AppColors.textSecondary, size: rs(context, 18)),
+                color: AppColors.textSecondary,
+                size: rs(context, 18)),
           )
               : const SizedBox.shrink()),
           border: InputBorder.none,
@@ -1057,7 +1250,8 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _searchResultsList(BuildContext context, AddonController addonCtrl) {
+  Widget _searchResultsList(
+      BuildContext context, AddonController addonCtrl) {
     return Obx(() {
       return SizedBox(
         height: rs(context, 210),
@@ -1065,7 +1259,8 @@ class OrderDetailsPage extends StatelessWidget {
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: rs(context, 4)),
           itemCount: addonCtrl.searchResults.length,
-          separatorBuilder: (_, __) => SizedBox(width: rs(context, 10)),
+          separatorBuilder: (_, __) =>
+              SizedBox(width: rs(context, 10)),
           itemBuilder: (context, idx) {
             final part = addonCtrl.searchResults[idx];
             return _searchResultCard(context, addonCtrl, part);
@@ -1075,8 +1270,8 @@ class OrderDetailsPage extends StatelessWidget {
     });
   }
 
-  Widget _searchResultCard(
-      BuildContext context, AddonController addonCtrl, AddonPartModel part) {
+  Widget _searchResultCard(BuildContext context,
+      AddonController addonCtrl, AddonPartModel part) {
     return CustomContainer(
       width: rs(context, 150),
       backgroundColor: AppColors.white,
@@ -1107,16 +1302,19 @@ class OrderDetailsPage extends StatelessWidget {
             Obx(() {
               final isAdding = addonCtrl.isAdding.value;
               return GestureDetector(
-                onTap: isAdding ? null : () => addonCtrl.addPart(part),
+                onTap:
+                isAdding ? null : () => addonCtrl.addPart(part),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: rs(context, 8)),
+                  padding:
+                  EdgeInsets.symmetric(vertical: rs(context, 8)),
                   decoration: BoxDecoration(
                     color: isAdding
                         ? AppColors.primary.withOpacity(0.4)
                         : AppColors.primary,
-                    borderRadius: BorderRadius.circular(rs(context, 10)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 10)),
                   ),
                   child: isAdding
                       ? Center(
@@ -1133,11 +1331,13 @@ class OrderDetailsPage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.add_rounded,
-                          color: Colors.white, size: rs(context, 16)),
+                          color: Colors.white,
+                          size: rs(context, 16)),
                       SizedBox(width: rs(context, 4)),
                       Text(
                         "Add",
-                        style: AppTextStyles.bodySmall(context).copyWith(
+                        style: AppTextStyles.bodySmall(context)
+                            .copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
@@ -1194,7 +1394,8 @@ class OrderDetailsPage extends StatelessWidget {
         height: rs(context, 180), fit: BoxFit.cover);
   }
 
-  Widget _orderAddonsList(BuildContext context, AddonController addonCtrl) {
+  Widget _orderAddonsList(
+      BuildContext context, AddonController addonCtrl) {
     return CustomContainer(
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
@@ -1228,12 +1429,15 @@ class OrderDetailsPage extends StatelessWidget {
               ),
             ),
             Divider(
-                height: 1, color: AppColors.textSecondary.withOpacity(0.08)),
+                height: 1,
+                color: AppColors.textSecondary.withOpacity(0.08)),
             ...addonCtrl.orderAddons.asMap().entries.map((entry) {
               final idx = entry.key;
               final addon = entry.value;
-              final isLast = idx == addonCtrl.orderAddons.length - 1;
-              final isRemoving = addonCtrl.removingId.value == addon.id;
+              final isLast =
+                  idx == addonCtrl.orderAddons.length - 1;
+              final isRemoving =
+                  addonCtrl.removingId.value == addon.id;
 
               return Column(
                 children: [
@@ -1246,11 +1450,14 @@ class OrderDetailsPage extends StatelessWidget {
                       children: [
                         CustomContainer(
                           padding: EdgeInsets.all(rs(context, 8)),
-                          backgroundColor: AppColors.primary.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(rs(context, 10)),
+                          backgroundColor:
+                          AppColors.primary.withOpacity(0.08),
+                          borderRadius:
+                          BorderRadius.circular(rs(context, 10)),
                           child: Text(
                             "×${addon.quantity}",
-                            style: AppTextStyles.bodySmall(context).copyWith(
+                            style: AppTextStyles.bodySmall(context)
+                                .copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.bold,
                             ),
@@ -1263,13 +1470,18 @@ class OrderDetailsPage extends StatelessWidget {
                             children: [
                               Text(
                                 addon.partName,
-                                style: AppTextStyles.bodyMedium(context)
-                                    .copyWith(fontWeight: FontWeight.w600),
+                                style:
+                                AppTextStyles.bodyMedium(context)
+                                    .copyWith(
+                                    fontWeight: FontWeight.w600),
                               ),
                               Text(
                                 "₹${addon.unitPrice.toStringAsFixed(0)} × ${addon.quantity} = ₹${addon.totalPrice.toStringAsFixed(0)}",
-                                style: AppTextStyles.bodySmall(context)
-                                    .copyWith(color: AppColors.textSecondary),
+                                style:
+                                AppTextStyles.bodySmall(context)
+                                    .copyWith(
+                                    color:
+                                    AppColors.textSecondary),
                               ),
                             ],
                           ),
@@ -1283,10 +1495,11 @@ class OrderDetailsPage extends StatelessWidget {
                             padding: EdgeInsets.all(rs(context, 8)),
                             decoration: BoxDecoration(
                               color: AppColors.error.withOpacity(0.08),
-                              borderRadius:
-                              BorderRadius.circular(rs(context, 10)),
+                              borderRadius: BorderRadius.circular(
+                                  rs(context, 10)),
                               border: Border.all(
-                                  color: AppColors.error.withOpacity(0.2)),
+                                  color:
+                                  AppColors.error.withOpacity(0.2)),
                             ),
                             child: isRemoving
                                 ? SizedBox(
@@ -1310,12 +1523,14 @@ class OrderDetailsPage extends StatelessWidget {
                   if (!isLast)
                     Divider(
                         height: 1,
-                        color: AppColors.textSecondary.withOpacity(0.08)),
+                        color:
+                        AppColors.textSecondary.withOpacity(0.08)),
                 ],
               );
             }),
             Divider(
-                height: 1, color: AppColors.textSecondary.withOpacity(0.12)),
+                height: 1,
+                color: AppColors.textSecondary.withOpacity(0.12)),
             Padding(
               padding: EdgeInsets.symmetric(
                 horizontal: rs(context, 14),
@@ -1411,7 +1626,8 @@ class OrderDetailsPage extends StatelessWidget {
                       height: rs(context, 4),
                       backgroundColor:
                       AppColors.textSecondary.withOpacity(0.3),
-                      borderRadius: BorderRadius.circular(rs(context, 10)),
+                      borderRadius:
+                      BorderRadius.circular(rs(context, 10)),
                     ),
                   ),
                   Padding(
@@ -1425,7 +1641,8 @@ class OrderDetailsPage extends StatelessWidget {
                       children: [
                         CustomContainer(
                           padding: EdgeInsets.all(rs(context, 10)),
-                          backgroundColor: AppColors.primary.withOpacity(0.1),
+                          backgroundColor:
+                          AppColors.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(100),
                           child: Icon(
                             Icons.photo_camera_rounded,
@@ -1441,7 +1658,8 @@ class OrderDetailsPage extends StatelessWidget {
                               Text(
                                 "Order Completion Photos",
                                 style: AppTextStyles.heading4(context)
-                                    .copyWith(fontWeight: FontWeight.bold),
+                                    .copyWith(
+                                    fontWeight: FontWeight.bold),
                               ),
                               Obx(() {
                                 final c = controller.capturedImages
@@ -1451,7 +1669,8 @@ class OrderDetailsPage extends StatelessWidget {
                                   "$c of 5 photos captured",
                                   style: AppTextStyles.bodySmall(context)
                                       .copyWith(
-                                      color: AppColors.textSecondary),
+                                      color:
+                                      AppColors.textSecondary),
                                 );
                               }),
                             ],
@@ -1487,11 +1706,12 @@ class OrderDetailsPage extends StatelessWidget {
                         rs(context, 16),
                         rs(context, 16),
                       ),
-                      child:
-                      _buildImageGrid(context, controller, sheetContext),
+                      child: _buildImageGrid(
+                          context, controller, sheetContext),
                     ),
                   ),
-                  _buildSheetBottomBar(context, controller, sheetContext),
+                  _buildSheetBottomBar(
+                      context, controller, sheetContext),
                 ],
               ),
             );
@@ -1543,10 +1763,12 @@ class OrderDetailsPage extends StatelessWidget {
         Row(
           children: [
             Expanded(
-                child: _imageSlot(context, controller, 0, isLarge: true)),
+                child:
+                _imageSlot(context, controller, 0, isLarge: true)),
             SizedBox(width: rs(context, 10)),
             Expanded(
-                child: _imageSlot(context, controller, 1, isLarge: true)),
+                child:
+                _imageSlot(context, controller, 1, isLarge: true)),
           ],
         ),
         SizedBox(height: rs(context, 10)),
@@ -1583,7 +1805,8 @@ class OrderDetailsPage extends StatelessWidget {
   Widget _imageSlot(
       BuildContext context, OrderDetailsController controller, int index,
       {bool isLarge = false}) {
-    final double height = isLarge ? rs(context, 165) : rs(context, 110);
+    final double height =
+    isLarge ? rs(context, 165) : rs(context, 110);
 
     return Obx(() {
       final file = controller.capturedImages[index];
@@ -1642,14 +1865,16 @@ class OrderDetailsPage extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                     child: Icon(Icons.check_rounded,
-                        color: Colors.white, size: rs(context, 12)),
+                        color: Colors.white,
+                        size: rs(context, 12)),
                   ),
                 ),
                 Positioned(
                   top: rs(context, 7),
                   right: rs(context, 7),
                   child: GestureDetector(
-                    onTap: () => controller.deleteImageAtSlot(index),
+                    onTap: () =>
+                        controller.deleteImageAtSlot(index),
                     child: Container(
                       padding: EdgeInsets.all(rs(context, 5)),
                       decoration: BoxDecoration(
@@ -1657,7 +1882,8 @@ class OrderDetailsPage extends StatelessWidget {
                         shape: BoxShape.circle,
                       ),
                       child: Icon(Icons.close_rounded,
-                          color: Colors.white, size: rs(context, 13)),
+                          color: Colors.white,
+                          size: rs(context, 13)),
                     ),
                   ),
                 ),
@@ -1666,7 +1892,8 @@ class OrderDetailsPage extends StatelessWidget {
                   left: rs(context, 8),
                   child: Text(
                     "Photo ${index + 1}",
-                    style: AppTextStyles.bodySmall(context).copyWith(
+                    style:
+                    AppTextStyles.bodySmall(context).copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.w600,
                       fontSize: rs(context, 11),
@@ -1693,8 +1920,10 @@ class OrderDetailsPage extends StatelessWidget {
                 SizedBox(height: rs(context, 6)),
                 Text(
                   "Photo ${index + 1}",
-                  style: AppTextStyles.bodySmall(context).copyWith(
-                    color: AppColors.textSecondary.withOpacity(0.7),
+                  style:
+                  AppTextStyles.bodySmall(context).copyWith(
+                    color:
+                    AppColors.textSecondary.withOpacity(0.7),
                     fontWeight: FontWeight.w500,
                     fontSize: rs(context, 11),
                   ),
@@ -1739,7 +1968,8 @@ class OrderDetailsPage extends StatelessWidget {
                       vertical: rs(context, 14),
                     ),
                     backgroundColor: AppColors.error.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(rs(context, 14)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 14)),
                     border: Border.all(
                         color: AppColors.error.withOpacity(0.25)),
                     child: Icon(Icons.refresh_rounded,
@@ -1766,7 +1996,8 @@ class OrderDetailsPage extends StatelessWidget {
                     color: allDone
                         ? AppColors.success.withOpacity(0.9)
                         : AppColors.secondary.withOpacity(0.85),
-                    borderRadius: BorderRadius.circular(rs(context, 16)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 16)),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1869,18 +2100,21 @@ class OrderDetailsPage extends StatelessWidget {
                     height: rs(context, 4),
                     backgroundColor:
                     AppColors.textSecondary.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(rs(context, 10)),
+                    borderRadius:
+                    BorderRadius.circular(rs(context, 10)),
                   ),
                   SizedBox(height: rs(context, 16)),
                   Row(
                     children: [
                       CustomContainer(
                         padding: EdgeInsets.all(rs(context, 10)),
-                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        backgroundColor:
+                        AppColors.primary.withOpacity(0.1),
                         borderRadius:
                         BorderRadius.circular(rs(context, 100)),
                         child: Icon(Icons.security,
-                            color: AppColors.primary, size: rs(context, 22)),
+                            color: AppColors.primary,
+                            size: rs(context, 22)),
                       ),
                       SizedBox(width: rs(context, 10)),
                       Expanded(
@@ -1889,11 +2123,13 @@ class OrderDetailsPage extends StatelessWidget {
                           children: [
                             Text("Verify User",
                                 style: AppTextStyles.heading4(context)
-                                    .copyWith(fontWeight: FontWeight.bold)),
+                                    .copyWith(
+                                    fontWeight: FontWeight.bold)),
                             Text("Enter 6-digit OTP sent to customer",
                                 style: AppTextStyles.bodySmall(context)
                                     .copyWith(
-                                    color: AppColors.textSecondary)),
+                                    color:
+                                    AppColors.textSecondary)),
                           ],
                         ),
                       ),
@@ -1901,7 +2137,8 @@ class OrderDetailsPage extends StatelessWidget {
                         padding: EdgeInsets.symmetric(
                             horizontal: rs(context, 10),
                             vertical: rs(context, 6)),
-                        backgroundColor: AppColors.warning.withOpacity(0.12),
+                        backgroundColor:
+                        AppColors.warning.withOpacity(0.12),
                         borderRadius:
                         BorderRadius.circular(rs(context, 20)),
                         child: Row(
@@ -1935,10 +2172,11 @@ class OrderDetailsPage extends StatelessWidget {
                           color: filled
                               ? AppColors.primary.withOpacity(0.08)
                               : isActive
-                              ? AppColors.primary.withOpacity(0.04)
+                              ? AppColors.primary
+                              .withOpacity(0.04)
                               : AppColors.white,
-                          borderRadius:
-                          BorderRadius.circular(rs(context, 10)),
+                          borderRadius: BorderRadius.circular(
+                              rs(context, 10)),
                           border: Border.all(
                             color: filled
                                 ? AppColors.primary
@@ -1952,16 +2190,20 @@ class OrderDetailsPage extends StatelessWidget {
                         child: Center(
                           child: filled
                               ? Text(digits[i],
-                              style: AppTextStyles.heading4(context)
+                              style:
+                              AppTextStyles.heading4(context)
                                   .copyWith(
                                   color: AppColors.primary,
-                                  fontWeight: FontWeight.bold))
+                                  fontWeight:
+                                  FontWeight.bold))
                               : isActive
                               ? CustomContainer(
                             width: rs(context, 2),
                             height: rs(context, 22),
-                            backgroundColor: AppColors.primary,
-                            borderRadius: BorderRadius.zero,
+                            backgroundColor:
+                            AppColors.primary,
+                            borderRadius:
+                            BorderRadius.zero,
                           )
                               : const SizedBox.shrink(),
                         ),
@@ -2007,8 +2249,8 @@ class OrderDetailsPage extends StatelessWidget {
 
               return Expanded(
                 child: Padding(
-                  padding:
-                  EdgeInsets.symmetric(horizontal: rs(context, 5)),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: rs(context, 5)),
                   child: Material(
                     color: Colors.transparent,
                     borderRadius:
@@ -2035,8 +2277,8 @@ class OrderDetailsPage extends StatelessWidget {
                             controller.otpController.text =
                                 digits.join();
                             if (digits.length == 6) {
-                              await Future.delayed(
-                                  const Duration(milliseconds: 250));
+                              await Future.delayed(const Duration(
+                                  milliseconds: 250));
                               await controller.confirmOtp();
                             }
                           }
@@ -2047,7 +2289,8 @@ class OrderDetailsPage extends StatelessWidget {
                         backgroundColor: isCancel
                             ? AppColors.error.withOpacity(0.07)
                             : isDel
-                            ? AppColors.textSecondary.withOpacity(0.07)
+                            ? AppColors.textSecondary
+                            .withOpacity(0.07)
                             : AppColors.white,
                         borderRadius:
                         BorderRadius.circular(rs(context, 14)),
@@ -2072,15 +2315,20 @@ class OrderDetailsPage extends StatelessWidget {
                               size: rs(context, 22))
                               : isCancel
                               ? Text("Cancel",
-                              style: AppTextStyles.bodySmall(context)
+                              style:
+                              AppTextStyles.bodySmall(context)
                                   .copyWith(
                                   color: AppColors.error,
-                                  fontWeight: FontWeight.w600))
+                                  fontWeight:
+                                  FontWeight.w600))
                               : Text(key,
-                              style: AppTextStyles.heading4(context)
+                              style:
+                              AppTextStyles.heading4(context)
                                   .copyWith(
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary)),
+                                  fontWeight:
+                                  FontWeight.w600,
+                                  color: AppColors
+                                      .textPrimary)),
                         ),
                       ),
                     ),
@@ -2179,11 +2427,13 @@ class OrderDetailsPage extends StatelessWidget {
                     children: [
                       Text("Phone Number",
                           style: AppTextStyles.bodySmall(context)
-                              .copyWith(color: AppColors.textSecondary)),
+                              .copyWith(
+                              color: AppColors.textSecondary)),
                       SizedBox(height: rs(context, 4)),
                       Text(
                         phoneText,
-                        style: AppTextStyles.bodyMedium(context).copyWith(
+                        style:
+                        AppTextStyles.bodyMedium(context).copyWith(
                           fontWeight: FontWeight.w600,
                           color: canCall
                               ? AppColors.textPrimary
@@ -2216,7 +2466,9 @@ class OrderDetailsPage extends StatelessWidget {
                 child: _actionButton(
                   context,
                   Icons.call_rounded,
-                  canCall ? "Call Customer" : "Phone available later",
+                  canCall
+                      ? "Call Customer"
+                      : "Phone available later",
                 ),
               ),
             ),
@@ -2244,7 +2496,8 @@ class OrderDetailsPage extends StatelessWidget {
                 Expanded(
                   child: Text(
                     addressText,
-                    style: AppTextStyles.bodyMedium(context).copyWith(
+                    style:
+                    AppTextStyles.bodyMedium(context).copyWith(
                       fontWeight: FontWeight.w600,
                       color: canNavigate
                           ? AppColors.textPrimary
@@ -2265,8 +2518,8 @@ class OrderDetailsPage extends StatelessWidget {
                       () => NavigationPage(
                     destinationLat: address.latitude!,
                     destinationLng: address.longitude!,
-                    destinationName:
-                    address.formattedAddress ?? "Customer Location",
+                    destinationName: address.formattedAddress ??
+                        "Customer Location",
                   ),
                   transition: Transition.downToUp,
                   duration: const Duration(milliseconds: 400),
@@ -2291,7 +2544,8 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
-  Widget _actionButton(BuildContext context, IconData icon, String text) {
+  Widget _actionButton(
+      BuildContext context, IconData icon, String text) {
     return CustomContainer(
       width: double.infinity,
       padding: EdgeInsets.symmetric(vertical: rs(context, 14)),
@@ -2319,7 +2573,8 @@ class OrderDetailsPage extends StatelessWidget {
       backgroundColor: (color ?? AppColors.secondary).withOpacity(0.12),
       borderRadius: BorderRadius.circular(rs(context, 12)),
       child: Icon(icon,
-          color: color ?? AppColors.secondary, size: rs(context, 22)),
+          color: color ?? AppColors.secondary,
+          size: rs(context, 22)),
     );
   }
 

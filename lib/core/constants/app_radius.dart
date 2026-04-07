@@ -11,6 +11,8 @@ class AppRadii {
   // Medium radius (cards, containers)
   static Radius md(BuildContext context) => Radius.circular(rs(context, 12));
 
+  static Radius md_lg(BuildContext context) => Radius.circular(rs(context, 16));
+
   // Large radius (bottom sheets, dialogs)
   static Radius lg(BuildContext context) => Radius.circular(rs(context, 20));
 

@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import '../../../../core/api/Api_Service/Worker_Leave/worker_leave.dart';
+import '../../../../core/utils/custome_snakbar.dart';
 
 class LeavehistoryController extends GetxController {
   var isLoading = true.obs;
@@ -7,20 +9,38 @@ class LeavehistoryController extends GetxController {
 
   @override
   void onInit() {
-    fetchLeaveHistory();
     super.onInit();
+    fetchLeaveHistory();
   }
 
-  void fetchLeaveHistory() async {
+  // ─────────────────────────────────────────────────
+  /// 🔹 1️⃣ FETCH HISTORY (initial load — shows shimmer)
+  // ─────────────────────────────────────────────────
+  Future<void> fetchLeaveHistory() async {
     try {
       isLoading(true);
       final data = await WorkerLeaveApi.requestLeaveHistory();
-      print("LEAVE HISTORY ::: ${data}");
-      leaveList.assignAll(data.reversed.toList());
+      debugPrint("LEAVE HISTORY ::: $data");
+      leaveList.assignAll((data as List).reversed.toList());
     } catch (e) {
-      Get.snackbar("Error", e.toString());
+      CustomSnackbar.showError('Error', e.toString());
     } finally {
       isLoading(false);
+    }
+  }
+
+  // ─────────────────────────────────────────────────
+  /// 🔹 2️⃣ REFRESH HISTORY (pull-to-refresh — no shimmer)
+  /// Called by RefreshIndicator's onRefresh callback.
+  /// Does NOT set isLoading = true, so the shimmer
+  /// skeleton is not shown — only the spinner appears.
+  // ─────────────────────────────────────────────────
+  Future<void> refreshHistory() async {
+    try {
+      final data = await WorkerLeaveApi.requestLeaveHistory();
+      debugPrint("LEAVE HISTORY REFRESHED ::: $data");
+      leaveList.assignAll((data as List).reversed.toList());
+    } catch (e) {
     }
   }
 }

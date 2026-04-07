@@ -2,10 +2,12 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../utils/app_storage.dart';
 import '../../api_endpoints.dart';
+import '../Worker_Refresh_Token/worker_api_service.dart';
 
 class LiveLocationService {
 
-  static Future<void> sendLiveLocation({
+  // ==================== SEND LIVE LOCATION ====================
+  static Future<Map<String, dynamic>> sendLiveLocation({
     required double latitude,
     required double longitude,
     required double accuracy,
@@ -14,59 +16,57 @@ class LiveLocationService {
     required int battery,
     required String source,
   }) async {
+    final body = {
+      'latitude': latitude,
+      'longitude': longitude,
+      'accuracy_meters': accuracy,
+      'heading': heading,
+      'speed_mps': speed,
+      'battery_percent': battery,
+      'source': source,
+      'is_mocked': source.toLowerCase() != 'gps',
+    };
 
     try {
-      final uri = Uri.parse(ApiUrl.baseUrl + ApiUrl.livelocationsend);
-      final token = await AppStorage.getWorkerAccessToken();
+      final isLoggedIn = await AppStorage.isWorkerLoggedIn();
 
-      final bool isMocked = source.toLowerCase() == "gps" ? false : true;
+      if (isLoggedIn) {
 
-      final response = await http.post(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
-          "latitude": latitude,
-          "longitude": longitude,
-          "accuracy_meters": accuracy,
-          "heading": heading,
-          "speed_mps": speed,
-          "battery_percent": battery,
-          "source": source,
-          "is_mocked": isMocked,
-        }),
-      );
+        final response = await WorkerApiService.post(
+          url: ApiUrl.livelocationsend,
+          body: body,
+        );
 
-      print("LIVE LOCATION RESPONSE: ${response.body}");
+        print("LOGIN LIVE LOCATION RESPONSE ::: ${response.body}");
 
+        return jsonDecode(response.body);
+      } else {
+
+        final response = await http.post(
+          Uri.parse(ApiUrl.baseUrl + ApiUrl.livelocationsend),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(body),
+        );
+        print("NOT LOGIN LIVE LOCATION RESPONSE ::: ${response.body}");
+        return jsonDecode(response.body);
+      }
     } catch (e) {
-      print("LIVE LOCATION ERROR: $e");
+      return {'success': false, 'message': 'Something went wrong.'};
     }
   }
 
-  static Future<void> workerStatus({required dynamic isOnline}) async {
+  // ==================== WORKER STATUS ====================
+  static Future<Map<String, dynamic>> workerStatus({
+    required bool isOnline,
+  }) async {
     try {
-      final uri = Uri.parse(ApiUrl.baseUrl + ApiUrl.workerstatus);
-      final token = await AppStorage.getWorkerAccessToken();
-
-      final response = await http.patch(
-        uri,
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
-        body: jsonEncode({
-          "is_online": isOnline,
-        }),
+      final response = await WorkerApiService.patch(
+        url: ApiUrl.workerstatus,
+        body: {'is_online': isOnline},
       );
-
-      print("WORKER STATUS : $isOnline");
-      print("WORKER STATUS RESPONSE: ${response.body}");
+      return jsonDecode(response.body);
     } catch (e) {
-      print("WORKER STATUS ERROR: $e");
+      return {'success': false, 'message': 'Something went wrong.'};
     }
   }
-
 }

@@ -12,6 +12,7 @@ class ProfileController extends GetxController {
   RxBool isOnline = false.obs;
   RxInt completedJobsCount = 0.obs;
   RxBool isLoading = true.obs;
+  RxBool isRefreshing = false.obs;
 
   @override
   void onInit() {
@@ -22,8 +23,9 @@ class ProfileController extends GetxController {
   Future<void> fetchProfile() async {
     try {
       isLoading.value = true;
-
       final response = await ProfileApi.getProfileData();
+
+      print("PROFILE RESPONSE ::: $response");
 
       if (response["success"]) {
         worker.value = response["data"];
@@ -34,6 +36,22 @@ class ProfileController extends GetxController {
       CustomSnackbar.showError("Error", e.toString());
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  Future<void> refreshProfile() async {
+    try {
+      isRefreshing.value = true;
+      final response = await ProfileApi.getProfileData();
+      if (response["success"]) {
+        worker.value = response["data"];
+      } else {
+        CustomSnackbar.showError("Error", response["message"]);
+      }
+    } catch (e) {
+      CustomSnackbar.showError("Error", e.toString());
+    } finally {
+      isRefreshing.value = false;
     }
   }
 

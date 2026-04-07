@@ -1,84 +1,64 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../../../utils/app_storage.dart';
 import '../../api_endpoints.dart';
+import '../Worker_Refresh_Token/worker_api_service.dart';
 
 class WorkerLeaveApi {
 
+  // ==================== REQUEST LEAVE ====================
   static Future<Map<String, dynamic>> requestLeave({
     required String startDatetime,
     required String endDatetime,
     required String reason,
   }) async {
-    final uri = Uri.parse(ApiUrl.baseUrl + ApiUrl.workerleaverequest);
-    final token = await AppStorage.getWorkerAccessToken();
-
-    final response = await http.post(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        "start_datetime": startDatetime,
-        "end_datetime": endDatetime,
-        "reason": reason,
-      }),
-    );
-
-    return jsonDecode(response.body);
-  }
-
-  static Future<Map<String, dynamic>> workerLeaveCheck() async {
-    final uri = Uri.parse(ApiUrl.baseUrl + ApiUrl.workerleavecheck);
-    final token = await AppStorage.getWorkerAccessToken();
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    return jsonDecode(response.body);
-  }
-
-  static Future<Map<String, dynamic>> workerLeaveRequestStatus(int requestId) async {
-    final uri = Uri.parse(ApiUrl.baseUrl + ApiUrl.workerLeaveRequestStatus(requestId));
-
-    final token = await AppStorage.getWorkerAccessToken();
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    return jsonDecode(response.body);
-  }
-
-  static Future<List<dynamic>> requestLeaveHistory() async {
-    final uri = Uri.parse(ApiUrl.baseUrl + ApiUrl.workerleavehistory);
-    final token = await AppStorage.getWorkerAccessToken();
-
-    final response = await http.get(
-      uri,
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    final decoded = jsonDecode(response.body);
-
-    if (decoded['success'] == true) {
-      return decoded['message'];
-    } else {
-      throw Exception("Failed to load leave history");
+    try {
+      final response = await WorkerApiService.post(
+        url: ApiUrl.workerleaverequest,
+        body: {
+          'start_datetime': startDatetime,
+          'end_datetime': endDatetime,
+          'reason': reason,
+        },
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Something went wrong.'};
     }
   }
 
+  // ==================== LEAVE CHECK ====================
+  static Future<Map<String, dynamic>> workerLeaveCheck() async {
+    try {
+      final response = await WorkerApiService.get(
+        url: ApiUrl.workerleavecheck,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Something went wrong.'};
+    }
+  }
+
+  // ==================== LEAVE REQUEST STATUS ====================
+  static Future<Map<String, dynamic>> workerLeaveRequestStatus(
+      int requestId) async {
+    try {
+      final response = await WorkerApiService.get(
+        url: ApiUrl.workerLeaveRequestStatus(requestId),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Something went wrong.'};
+    }
+  }
+
+  // ==================== LEAVE HISTORY ====================
+  static Future<Map<String, dynamic>> requestLeaveHistory() async {
+    try {
+      final response = await WorkerApiService.get(
+        url: ApiUrl.workerleavehistory,
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Something went wrong.'};
+    }
+  }
 }

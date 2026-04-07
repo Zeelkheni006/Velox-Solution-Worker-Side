@@ -1,7 +1,7 @@
 class ApiUrl {
 
   // LIVE BASE URL //
-  // static const String baseUrl = "https://api.veloxsolution.com";
+  static const String baseUrl = "https://api.veloxsolution.com";
   // static const String baseUrl = "http://72.61.245.134:8000";
 
   // ZEEL //
@@ -9,13 +9,16 @@ class ApiUrl {
 
 
   // HARSH //
-  static const String baseUrl = "http://192.168.29.164:5000";
+  // static const String baseUrl = "http://192.168.29.164:5000";
 
   // AUTH //
   static const String LoginInitiate = "/api/v1/worker/auth/login/initiate";
   static const String LoginPassword = "/api/v1/worker/auth/login/through/password";
   static const String LoginOtp = "/api/v1/worker/auth/login/through/otp";
   static const String LoginOtpVerify = "/api/v1/worker/auth/login/through/otp/verify";
+
+  // REFRESH TOKEN //
+  static const String refreshToken = "/api/v1/worker/auth/refresh";
 
   // RESEND OTP //
   static const String loginresendotp = "/api/v1/worker/auth/login/through/otp/resend";
@@ -53,6 +56,8 @@ class ApiUrl {
   static const String ordercomplete = "/api/v1/worker/dashboard/orders/complete";
 
   // RESCHEDULE SLOTS //
+  // Add inside ApiUrl class
+  static const String rescheduleAvailableSlots = '/api/v1/worker/dashboard/orders/reschedule/available-slots';
   static const String slotconfirm = "/api/v1/worker/dashboard/orders/reschedule/confirm";
 
   // ADDON ITEM //
