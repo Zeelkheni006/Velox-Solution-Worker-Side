@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../../../core/api/Api_Service/Cancel_Order_By_Worker/cancel_order_by_worker.dart';
 import '../../../../core/api/Api_Service/Close_Order/close_order.dart';
 import '../../../../core/api/Api_Service/Order_Status/order_status.dart';
 import '../../../../core/api/Api_Service/Send_Otp/send_otp.dart';
@@ -24,6 +25,7 @@ class OrderDetailsController extends GetxController {
 
   var showOtpField = false.obs;
   var otpController = TextEditingController();
+  final cancelNoteController = TextEditingController();
   var remainingSeconds = 0.obs;
   Timer? _timer;
   var isOtpVerified = false.obs;
@@ -52,20 +54,16 @@ class OrderDetailsController extends GetxController {
   // ── FIX: single flag to prevent duplicate bottom sheet ──
   bool _otpSheetScheduled = false;
 
-
   @override
   void onInit() {
     super.onInit();
     print("CURRENT ORDER ID ::: $orderId");
-    // ── FIX: run sequentially so checkOtpStateOnLoad runs
-    //         AFTER fetchOrderDetails + checkOrderStatus finish ──
     _initPage();
   }
 
   Future<void> _initPage() async {
     await fetchOrderDetails();
     await checkOrderStatus();
-    // ── Only check saved OTP session after API calls complete ──
     await checkOtpStateOnLoad();
   }
 
@@ -73,8 +71,6 @@ class OrderDetailsController extends GetxController {
   // OTP Sheet scheduling — single entry point
   // ============================================================
 
-  /// Call this instead of directly opening the sheet.
-  /// Ensures the sheet is opened at most once per page visit.
   void scheduleOtpSheet(BuildContext context) {
     if (_otpSheetScheduled) return;
     if (Get.isBottomSheetOpen == true) return;
@@ -83,18 +79,13 @@ class OrderDetailsController extends GetxController {
     _otpSheetScheduled = true;
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Double-check state is still valid before opening
       if (!isOtpVerified.value && showOtpField.value) {
-        // Import and call the view's show method via callback
         _onOpenOtpSheet?.call(context);
       }
-      // Reset flag so it can trigger again if sheet was dismissed
-      // and showOtpField becomes true again (e.g. resend OTP)
       _otpSheetScheduled = false;
     });
   }
 
-  // Callback set by the View to open the OTP bottom sheet
   void Function(BuildContext context)? _onOpenOtpSheet;
 
   void setOtpSheetCallback(void Function(BuildContext context) callback) {
@@ -186,7 +177,7 @@ class OrderDetailsController extends GetxController {
   }
 
   // ============================================================
-  // Complete / Close order
+  // Complete / Close / CANCEL order
   // ============================================================
 
   Future<void> completeOrder() async {
@@ -325,6 +316,53 @@ class OrderDetailsController extends GetxController {
     }
   }
 
+  // ── NEW: Cancel order by worker ──────────────────────────────────────────
+  /// Only callable after [isOtpVerified] is true.
+  /// Sends order_id, note, visiting_fee to the cancel endpoint.
+  Future<void> cancelOrder({
+    required String note,
+    required double visitingFee,
+  }) async {
+    FullScreenLoader.show(message: "Cancelling order...");
+
+    try {
+      final res = await CancelOrderByWorker.orderCancelByWorker(
+        orderId: orderId,
+        note: note,
+        visitingFee: visitingFee,
+      );
+
+      print("CANCEL ORDER RESPONSE ::: $res");
+
+      FullScreenLoader.hide();
+
+      if (res['success'] == true) {
+        await Future.delayed(const Duration(milliseconds: 200));
+        Get.offAllNamed(Routes.DASHBOARD);
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        final message = res['message'];
+        final msgText = message is Map
+            ? message['message']?.toString() ?? "Order cancelled successfully"
+            : message?.toString() ?? "Order cancelled successfully";
+
+        CustomSnackbar.showSuccess("Order Cancelled", msgText);
+      } else {
+        final message = res['message'];
+        final errText = message is Map
+            ? message['message']?.toString() ?? "Failed to cancel order"
+            : message?.toString() ?? "Failed to cancel order";
+
+        CustomSnackbar.showError("Error", errText);
+      }
+    } catch (e) {
+      print("CANCEL ORDER ERROR ::: $e");
+      FullScreenLoader.hide();
+      CustomSnackbar.showError(
+          "Error", "Something went wrong. Please try again.");
+    }
+  }
+
   // ============================================================
   // API calls
   // ============================================================
@@ -385,7 +423,6 @@ class OrderDetailsController extends GetxController {
           expiresInSeconds: expiresIn,
         );
         startTimer(expiresIn);
-        // ── Reset sheet flag so it can open fresh ──
         _otpSheetScheduled = false;
         showOtpField(true);
       } else {
@@ -446,11 +483,9 @@ class OrderDetailsController extends GetxController {
       final seconds = await AppStorage.getOtpRemainingSeconds();
       if (seconds != null && seconds > 0) {
         startTimer(seconds);
-        // ── Reset flag so fresh sheet can open ──
         _otpSheetScheduled = false;
         showOtpField(true);
       } else {
-        // Expired session — clean up
         await AppStorage.clearOtpSession();
       }
     }
@@ -479,6 +514,7 @@ class OrderDetailsController extends GetxController {
     stopTimer();
     otpController.dispose();
     _onOpenOtpSheet = null;
+    cancelNoteController.dispose();
     super.onClose();
   }
 }

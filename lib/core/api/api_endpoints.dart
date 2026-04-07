@@ -61,4 +61,7 @@ class ApiUrl {
   static const String addonRemove = "/api/v1/worker/dashboard/orders/addon-items/remove";
   static String addonItemShow(int orderId) => "/api/v1/worker/dashboard/orders/addon-items/$orderId";
 
+  // ORDER CANCEL BY WORKER //
+  static const String ordercancelbyworker = "/api/v1/worker/dashboard/orders/cancel";
+
 }
