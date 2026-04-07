@@ -157,6 +157,8 @@ class LoginController extends GetxController {
         },
       );
 
+      print("LOGIN THROUGH PASSWORD ::: $response");
+
       FullScreenLoader.hide();
 
       if (response['success'] == true) {

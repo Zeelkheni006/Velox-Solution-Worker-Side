@@ -3,10 +3,8 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
-import '../../../../core/constants/app_radius.dart';
 import '../../../../core/utils/app_responsive.dart';
 import '../../../../core/utils/custom_container.dart';
-import '../../../../core/utils/custom_textfield.dart';
 import '../../../../core/utils/custom_divider.dart';
 import '../../../../core/utils/custome_snakbar.dart';
 import '../../../routes/app_pages.dart';
@@ -76,37 +74,37 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
 
       /// 🔹 BODY
       body: Obx(() {
+        /// 🔹 SHIMMER LOADING
         if (controller.isLoading.value) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                CircularProgressIndicator(
-                  color: AppColors.secondary,
-                  strokeWidth: 3,
-                ),
-                SizedBox(height: rs(context, 16)),
-                Text(
-                  "Loading your leave details...",
-                  style: AppTextStyles.bodySmall(context),
-                ),
-              ],
-            ),
+          return _shimmerView(context);
+        }
+
+        /// 🔥 IF STATUS EXISTS → SHOW STATUS UI (with Pull-to-Refresh)
+        if (controller.showStatusUI.value) {
+          return RefreshIndicator(
+            onRefresh: controller.refreshLeave,
+            color: AppColors.secondary,
+            backgroundColor: AppColors.white,
+            displacement: 40,
+            strokeWidth: 2.5,
+            child: _statusView(context),
           );
         }
 
-        /// 🔥 IF STATUS EXISTS → SHOW STATUS UI
-        if (controller.showStatusUI.value) {
-          return _statusView(context);
-        }
-
-        /// 🔥 ELSE → SHOW SUBMIT FORM
-        return _leaveFormView(context);
+        /// 🔥 ELSE → SHOW SUBMIT FORM (with Pull-to-Refresh)
+        return RefreshIndicator(
+          onRefresh: controller.refreshLeave,
+          color: AppColors.secondary,
+          backgroundColor: AppColors.white,
+          displacement: 40,
+          strokeWidth: 2.5,
+          child: _leaveFormView(context),
+        );
       }),
 
       /// 🔹 BOTTOM BUTTON (ONLY FOR FORM UI)
       bottomNavigationBar: Obx(() {
-        if (controller.showStatusUI.value) {
+        if (controller.showStatusUI.value || controller.isLoading.value) {
           return const SizedBox();
         }
 
@@ -123,7 +121,7 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               BoxShadow(
                 color: AppColors.black.withOpacity(0.05),
                 blurRadius: 10,
-                offset: Offset(0, -5),
+                offset: const Offset(0, -5),
               ),
             ],
           ),
@@ -136,7 +134,7 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               BoxShadow(
                 color: AppColors.secondary.withOpacity(0.3),
                 blurRadius: 12,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
             child: Row(
@@ -160,7 +158,74 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
     );
   }
 
+  // ─────────────────────────────────────────────────
+  /// 🔹 SHIMMER LOADING VIEW
+  // ─────────────────────────────────────────────────
+  Widget _shimmerView(BuildContext context) {
+    return SingleChildScrollView(
+      padding: EdgeInsets.all(rs(context, 20)),
+      physics: const NeverScrollableScrollPhysics(),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          /// STATUS CARD SHIMMER
+          _ShimmerBox(
+            width: double.infinity,
+            height: rs(context, 90),
+            borderRadius: rs(context, 20),
+          ),
+          SizedBox(height: rs(context, 12)),
+
+          /// DATE CARDS SHIMMER
+          Row(
+            children: [
+              Expanded(
+                child: _ShimmerBox(
+                  width: double.infinity,
+                  height: rs(context, 140),
+                  borderRadius: rs(context, 16),
+                ),
+              ),
+              SizedBox(width: rs(context, 12)),
+              Expanded(
+                child: _ShimmerBox(
+                  width: double.infinity,
+                  height: rs(context, 140),
+                  borderRadius: rs(context, 16),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: rs(context, 14)),
+
+          /// TITLE SHIMMER
+          _ShimmerBox(
+            width: rs(context, 140),
+            height: rs(context, 18),
+            borderRadius: rs(context, 8),
+          ),
+          SizedBox(height: rs(context, 8)),
+          _ShimmerBox(
+            width: rs(context, 200),
+            height: rs(context, 14),
+            borderRadius: rs(context, 8),
+          ),
+          SizedBox(height: rs(context, 12)),
+
+          /// TEXTAREA SHIMMER
+          _ShimmerBox(
+            width: double.infinity,
+            height: rs(context, 150),
+            borderRadius: rs(context, 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────
   /// 🔹 STATUS UI - MODERN CARD DESIGN
+  // ─────────────────────────────────────────────────
   Widget _statusView(BuildContext context) {
     Color statusColor = Colors.orange;
     IconData statusIcon = Icons.schedule_rounded;
@@ -174,6 +239,9 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
     }
 
     return SingleChildScrollView(
+      /// ⚠️ AlwaysScrollableScrollPhysics required for RefreshIndicator to work
+      /// even when content doesn't overflow screen
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.all(rs(context, 20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,7 +306,7 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               BoxShadow(
                 color: AppColors.black.withOpacity(0.05),
                 blurRadius: 15,
-                offset: Offset(0, 5),
+                offset: const Offset(0, 5),
               ),
             ],
             child: Column(
@@ -313,12 +381,36 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               ],
             ),
           ),
+
+          /// 🔁 Pull to refresh hint text
+          SizedBox(height: rs(context, 24)),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.arrow_downward_rounded,
+                  size: rs(context, 14),
+                  color: AppColors.grey,
+                ),
+                SizedBox(width: rs(context, 4)),
+                Text(
+                  "Pull down to refresh",
+                  style: AppTextStyles.caption(context).copyWith(
+                    color: AppColors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
+  // ─────────────────────────────────────────────────
   /// 🔹 INFO ROW WIDGET
+  // ─────────────────────────────────────────────────
   Widget _infoRow(
       BuildContext context, {
         required IconData icon,
@@ -363,9 +455,13 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
     );
   }
 
+  // ─────────────────────────────────────────────────
   /// 🔹 LEAVE FORM UI - MODERN DESIGN
+  // ─────────────────────────────────────────────────
   Widget _leaveFormView(BuildContext context) {
     return SingleChildScrollView(
+      /// ⚠️ AlwaysScrollableScrollPhysics required for RefreshIndicator to work
+      physics: const AlwaysScrollableScrollPhysics(),
       padding: EdgeInsets.fromLTRB(
         rs(context, 20),
         rs(context, 20),
@@ -382,7 +478,6 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          // SizedBox(height: rs(context, 4)),
           Text(
             "Choose your leave start and end date & time",
             style: AppTextStyles.bodySmall(context),
@@ -437,7 +532,6 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               fontWeight: FontWeight.w700,
             ),
           ),
-          // SizedBox(height: rs(context, 8)),
           Text(
             "Please provide a brief explanation",
             style: AppTextStyles.bodySmall(context),
@@ -457,7 +551,7 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               BoxShadow(
                 color: AppColors.black.withOpacity(0.03),
                 blurRadius: 10,
-                offset: Offset(0, 4),
+                offset: const Offset(0, 4),
               ),
             ],
             child: Padding(
@@ -470,7 +564,8 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
                 maxLines: 6,
                 style: AppTextStyles.bodyMedium(context),
                 decoration: InputDecoration(
-                  hintText: "e.g., Family emergency, Medical appointment, Personal work...",
+                  hintText:
+                  "e.g., Family emergency, Medical appointment, Personal work...",
                   hintStyle: AppTextStyles.bodySmall(context).copyWith(
                     color: AppColors.grey,
                   ),
@@ -479,12 +574,36 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
               ),
             ),
           ),
+
+          /// 🔁 Pull to refresh hint
+          SizedBox(height: rs(context, 24)),
+          Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.arrow_downward_rounded,
+                  size: rs(context, 14),
+                  color: AppColors.grey,
+                ),
+                SizedBox(width: rs(context, 4)),
+                Text(
+                  "Pull down to refresh",
+                  style: AppTextStyles.caption(context).copyWith(
+                    color: AppColors.grey,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );
   }
 
+  // ─────────────────────────────────────────────────
   /// 🔹 MODERN DATE TILE
+  // ─────────────────────────────────────────────────
   Widget _modernDateTile(
       BuildContext context, {
         required String title,
@@ -498,14 +617,12 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
       final isSelected = date.value != null;
 
       return CustomContainer(
-        backgroundColor: isSelected
-            ? iconColor.withOpacity(0.08)
-            : AppColors.white,
+        backgroundColor:
+        isSelected ? iconColor.withOpacity(0.08) : AppColors.white,
         borderRadius: BorderRadius.circular(rs(context, 16)),
         border: Border.all(
-          color: isSelected
-              ? iconColor.withOpacity(0.4)
-              : AppColors.greyLight,
+          color:
+          isSelected ? iconColor.withOpacity(0.4) : AppColors.greyLight,
           width: isSelected ? 2 : 1,
         ),
         onTap: onTap,
@@ -514,14 +631,14 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
           BoxShadow(
             color: iconColor.withOpacity(0.15),
             blurRadius: 12,
-            offset: Offset(0, 4),
+            offset: const Offset(0, 4),
           ),
         ]
             : [
           BoxShadow(
             color: AppColors.black.withOpacity(0.03),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
         child: Padding(
@@ -600,5 +717,85 @@ class WorkerleaveView extends GetView<WorkerleaveController> {
         ),
       );
     });
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+/// 🔹 SHIMMER BOX WIDGET (Reusable animated placeholder)
+// ─────────────────────────────────────────────────────────────────────────────
+class _ShimmerBox extends StatefulWidget {
+  final double width;
+  final double height;
+  final double borderRadius;
+
+  const _ShimmerBox({
+    required this.width,
+    required this.height,
+    required this.borderRadius,
+  });
+
+  @override
+  State<_ShimmerBox> createState() => _ShimmerBoxState();
+}
+
+class _ShimmerBoxState extends State<_ShimmerBox>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: false);
+
+    _animation = Tween<double>(begin: -1.5, end: 2.5).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final baseColor =
+    isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE8E8E8);
+    final shimmerColor =
+    isDark ? const Color(0xFF3D3D3D) : const Color(0xFFF5F5F5);
+
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return Container(
+          width: widget.width,
+          height: widget.height,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                baseColor,
+                shimmerColor,
+                baseColor,
+              ],
+              stops: [
+                (_animation.value - 0.5).clamp(0.0, 1.0),
+                (_animation.value).clamp(0.0, 1.0),
+                (_animation.value + 0.5).clamp(0.0, 1.0),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

@@ -2,19 +2,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../../../utils/app_storage.dart';
 import '../../api_endpoints.dart';
+import '../Worker_Refresh_Token/worker_api_service.dart';
 
 class ProfileApi {
 
+  // ==================== GET PROFILE DATA ====================
   static Future<Map<String, dynamic>> getProfileData() async {
     try {
-      final token = await AppStorage.getWorkerAccessToken();
-
-      final response = await http.get(
-        Uri.parse(ApiUrl.baseUrl + ApiUrl.getuserprofiledata),
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer $token",
-        },
+      final response = await WorkerApiService.get(
+        url: ApiUrl.getuserprofiledata,
       );
 
       final data = jsonDecode(response.body);

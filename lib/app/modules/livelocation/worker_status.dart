@@ -43,7 +43,7 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler>
 
     if (state == AppLifecycleState.paused) {
       // App background ma jai
-      LiveLocationService.workerStatus(isOnline: "background");
+      LiveLocationService.workerStatus(isOnline: false);
     }
 
     if (state == AppLifecycleState.detached) {

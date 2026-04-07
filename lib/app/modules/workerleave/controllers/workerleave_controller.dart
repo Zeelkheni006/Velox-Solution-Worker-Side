@@ -26,7 +26,9 @@ class WorkerleaveController extends GetxController {
     checkExistingLeave();
   }
 
+  // ─────────────────────────────────────────────────
   /// 🔹 1️⃣ CHECK EXISTING REQUEST
+  // ─────────────────────────────────────────────────
   Future<void> checkExistingLeave() async {
     try {
       isLoading.value = true;
@@ -44,13 +46,15 @@ class WorkerleaveController extends GetxController {
         }
       }
     } catch (e) {
-      print("Check Leave Error: $e");
+      debugPrint("Check Leave Error: $e");
     } finally {
       isLoading.value = false;
     }
   }
 
+  // ─────────────────────────────────────────────────
   /// 🔹 2️⃣ FETCH STATUS
+  // ─────────────────────────────────────────────────
   Future<void> fetchLeaveStatus(int requestId) async {
     try {
       final response =
@@ -66,11 +70,13 @@ class WorkerleaveController extends GetxController {
         showStatusUI.value = true;
       }
     } catch (e) {
-      print("Status Error: $e");
+      debugPrint("Status Error: $e");
     }
   }
 
+  // ─────────────────────────────────────────────────
   /// 🔹 3️⃣ SUBMIT LEAVE
+  // ─────────────────────────────────────────────────
   Future<void> submitLeave() async {
     if (startDate.value == null || endDate.value == null) {
       CustomSnackbar.showError('Error', 'Please select date & time');
@@ -114,12 +120,45 @@ class WorkerleaveController extends GetxController {
     }
   }
 
+  // ─────────────────────────────────────────────────
+  /// 🔹 4️⃣ PULL TO REFRESH
+  /// Called by RefreshIndicator's onRefresh callback.
+  /// Silently re-checks leave status without showing
+  /// the full shimmer loader.
+  // ─────────────────────────────────────────────────
+  Future<void> refreshLeave() async {
+    try {
+      final response = await WorkerLeaveApi.workerLeaveCheck();
+
+      if (response['success'] == true) {
+        final message = response['message'];
+
+        if (message is List && message.isNotEmpty) {
+          final requestId = message[0]['request_id'];
+          await fetchLeaveStatus(requestId);
+        } else {
+          /// No pending leave — reset to form view
+          showStatusUI.value = false;
+          statusText.value = '';
+          statusStart.value = '';
+          statusEnd.value = '';
+        }
+      }
+
+    } catch (e) {
+      debugPrint("Refresh Error: $e");
+    }
+  }
+
+  // ─────────────────────────────────────────────────
+  /// 🔹 5️⃣ DATE & TIME PICKER
+  // ─────────────────────────────────────────────────
   Future<void> pickDateTime(BuildContext context, bool isStart) async {
     DateTime initialDate = DateTime.now();
     TimeOfDay initialTime = TimeOfDay.now();
     DateTime firstDate = DateTime.now();
 
-    // 👇 If END time & startDate already selected
+    /// If END time & startDate already selected
     if (!isStart && startDate.value != null) {
       final startPlusOneMinute =
       startDate.value!.add(const Duration(minutes: 1));
@@ -179,9 +218,11 @@ class WorkerleaveController extends GetxController {
       time.minute,
     );
 
-    // ❌ Extra safety: end time should not be <= start time
-    if (!isStart && startDate.value != null &&
-        dateTime.isBefore(startDate.value!.add(const Duration(minutes: 1)))) {
+    /// Extra safety: end time should not be <= start time
+    if (!isStart &&
+        startDate.value != null &&
+        dateTime
+            .isBefore(startDate.value!.add(const Duration(minutes: 1)))) {
       CustomSnackbar.showError(
         'Invalid Time',
         'End time must be after start time',
@@ -191,12 +232,11 @@ class WorkerleaveController extends GetxController {
 
     if (isStart) {
       startDate.value = dateTime;
-      endDate.value = null; // 👈 reset end time
+      endDate.value = null; // reset end time when start changes
     } else {
       endDate.value = dateTime;
     }
   }
-
 
   @override
   void onClose() {

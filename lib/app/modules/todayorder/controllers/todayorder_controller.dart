@@ -4,6 +4,7 @@ import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order_mo
 
 class TodayOrderController extends GetxController {
   RxBool isTodayOrderLoading = true.obs;
+  RxBool isRefreshing = false.obs;
   RxList<OrderModel> todayOrders = <OrderModel>[].obs;
 
   @override
@@ -18,13 +19,9 @@ class TodayOrderController extends GetxController {
 
       final response = await OrderApi.getTodayOrders();
 
-      print("TODAY ORDER BODY ::: ${response}");
-
       if (response['success'] == true && response['data'] != null) {
         final List list = response['data']['orders'];
-
-        todayOrders.value =
-            list.map((e) => OrderModel.fromJson(e)).toList();
+        todayOrders.value = list.map((e) => OrderModel.fromJson(e)).toList();
       } else {
         todayOrders.clear();
       }
@@ -37,6 +34,20 @@ class TodayOrderController extends GetxController {
   }
 
   Future<void> refreshOrders() async {
-    await fetchTodayOrders();
+    try {
+      isRefreshing(true);
+      final response = await OrderApi.getTodayOrders();
+
+      if (response['success'] == true && response['data'] != null) {
+        final List list = response['data']['orders'];
+        todayOrders.value = list.map((e) => OrderModel.fromJson(e)).toList();
+      } else {
+        todayOrders.clear();
+      }
+    } catch (e) {
+      print("TODAY ORDER REFRESH ERROR ::: $e");
+    } finally {
+      isRefreshing(false);
+    }
   }
 }
