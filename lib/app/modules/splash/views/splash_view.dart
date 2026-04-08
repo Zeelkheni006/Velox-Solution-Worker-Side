@@ -11,9 +11,9 @@ class SplashView extends GetView<SplashController> {
   Widget build(BuildContext context) {
     controller.checkLoginAndNavigate();
 
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(
+      body: const Center(
         child: Image(
           image: AssetImage(AppAssets.logo),
           width: 220,

@@ -37,13 +37,13 @@ class UpcomingOrdersListView extends StatelessWidget {
                   height: MediaQuery.of(context).size.height * 0.65,
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
+                    children: [
                       Icon(
                         Icons.access_time_filled,
                         color: AppColors.greyLight,
                         size: 72,
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Text(
                         'No upcoming orders',
                         style: TextStyle(
@@ -52,7 +52,7 @@ class UpcomingOrdersListView extends StatelessWidget {
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      SizedBox(height: 8),
+                      const SizedBox(height: 8),
                       Text(
                         'Pull down to refresh',
                         style: TextStyle(

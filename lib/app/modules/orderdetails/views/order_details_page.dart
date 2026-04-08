@@ -49,7 +49,7 @@ class OrderDetailsPage extends StatelessWidget {
               title: Text("Order Details",
                   style: AppTextStyles.heading3(context)),
             ),
-            body: _ShimmerOrderDetails(context: context),
+            body: shimmerOrderDetails(context: context),
           );
         }
 
@@ -471,10 +471,10 @@ class OrderDetailsPage extends StatelessWidget {
   // SHIMMER SKELETON WIDGET
   // ══════════════════════════════════════════════════════════════════════════
 
-  Widget _ShimmerOrderDetails({required BuildContext context}) {
+  Widget shimmerOrderDetails({required BuildContext context}) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
+      baseColor: AppColors.greyLight,
+      highlightColor: AppColors.white.withOpacity(0.6),
       period: const Duration(milliseconds: 1200),
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
@@ -485,7 +485,7 @@ class OrderDetailsPage extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.all(rs(context, 16)),
               decoration: BoxDecoration(
-                color: Colors.grey.shade300,
+                color: AppColors.surface,
                 borderRadius: BorderRadius.only(
                   bottomLeft: Radius.circular(rs(context, 24)),
                   bottomRight: Radius.circular(rs(context, 24)),
@@ -503,8 +503,7 @@ class OrderDetailsPage extends StatelessWidget {
             SizedBox(height: rs(context, 20)),
 
             Padding(
-              padding:
-              EdgeInsets.symmetric(horizontal: rs(context, 16)),
+              padding: EdgeInsets.symmetric(horizontal: rs(context, 16)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -544,7 +543,7 @@ class OrderDetailsPage extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(rs(context, 12)),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.3),
+        color: AppColors.surface.withOpacity(0.6),
         borderRadius: BorderRadius.circular(rs(context, 14)),
       ),
       child: Column(
@@ -552,8 +551,8 @@ class OrderDetailsPage extends StatelessWidget {
           Container(
             width: rs(context, 24),
             height: rs(context, 24),
-            decoration: const BoxDecoration(
-              color: Colors.white,
+            decoration: BoxDecoration(
+              color: AppColors.white,
               shape: BoxShape.circle,
             ),
           ),
@@ -562,7 +561,7 @@ class OrderDetailsPage extends StatelessWidget {
             width: rs(context, 60),
             height: rs(context, 10),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(rs(context, 4)),
             ),
           ),
@@ -571,7 +570,7 @@ class OrderDetailsPage extends StatelessWidget {
             width: rs(context, 80),
             height: rs(context, 12),
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.white,
               borderRadius: BorderRadius.circular(rs(context, 4)),
             ),
           ),
@@ -587,7 +586,7 @@ class OrderDetailsPage extends StatelessWidget {
           width: rs(context, 42),
           height: rs(context, 42),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(rs(context, 12)),
           ),
         ),
@@ -596,7 +595,7 @@ class OrderDetailsPage extends StatelessWidget {
           width: rs(context, 120),
           height: rs(context, 16),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(rs(context, 6)),
           ),
         ),
@@ -609,7 +608,7 @@ class OrderDetailsPage extends StatelessWidget {
       width: double.infinity,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(rs(context, 14)),
       ),
     );
@@ -1301,44 +1300,37 @@ class OrderDetailsPage extends StatelessWidget {
             const Spacer(),
             Obx(() {
               final isAdding = addonCtrl.isAdding.value;
+
               return GestureDetector(
-                onTap:
-                isAdding ? null : () => addonCtrl.addPart(part),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
+                onTap: isAdding ? null : () => addonCtrl.addPart(part),
+                child: CustomContainer(
                   width: double.infinity,
-                  padding:
-                  EdgeInsets.symmetric(vertical: rs(context, 8)),
-                  decoration: BoxDecoration(
-                    color: isAdding
-                        ? AppColors.primary.withOpacity(0.4)
-                        : AppColors.primary,
-                    borderRadius:
-                    BorderRadius.circular(rs(context, 10)),
-                  ),
+                  padding: EdgeInsets.symmetric(vertical: rs(context, 8)),
+                  backgroundColor: AppColors.primary,
                   child: isAdding
                       ? Center(
                     child: SizedBox(
                       width: rs(context, 16),
                       height: rs(context, 16),
-                      child: const CircularProgressIndicator(
+                      child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: Colors.white,
+                        color: AppColors.textWhite,
                       ),
                     ),
                   )
                       : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.add_rounded,
-                          color: Colors.white,
-                          size: rs(context, 16)),
+                      Icon(
+                        Icons.add_rounded,
+                        color: AppColors.white,
+                        size: rs(context, 16),
+                      ),
                       SizedBox(width: rs(context, 4)),
                       Text(
                         "Add",
-                        style: AppTextStyles.bodySmall(context)
-                            .copyWith(
-                          color: Colors.white,
+                        style: AppTextStyles.bodySmall(context).copyWith(
+                          color: AppColors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

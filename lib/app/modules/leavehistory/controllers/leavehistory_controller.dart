@@ -19,11 +19,23 @@ class LeavehistoryController extends GetxController {
   Future<void> fetchLeaveHistory() async {
     try {
       isLoading(true);
-      final data = await WorkerLeaveApi.requestLeaveHistory();
-      debugPrint("LEAVE HISTORY ::: $data");
-      leaveList.assignAll((data as List).reversed.toList());
+
+      final response = await WorkerLeaveApi.requestLeaveHistory();
+      debugPrint("LEAVE HISTORY ::: $response");
+
+      final data = response['data'];
+
+      if (data is List) {
+        leaveList.assignAll(data.reversed.toList());
+      } else {
+
+        leaveList.clear();
+        debugPrint("LEAVE HISTORY: Data is not a list");
+      }
+
     } catch (e) {
-      CustomSnackbar.showError('Error', e.toString());
+      // CustomSnackbar.showError('Error', e.toString());
+      debugPrint("LEAVE HISTORY ERROR ::: ${e.toString()}");
     } finally {
       isLoading(false);
     }

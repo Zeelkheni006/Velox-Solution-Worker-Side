@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:get/get.dart';
 import '../../../../core/utils/app_responsive.dart';
+import '../../../../core/constants/app_colors.dart';
 
 class ProfileShimmer extends StatelessWidget {
   const ProfileShimmer({super.key});
@@ -8,28 +10,24 @@ class ProfileShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
+      baseColor: AppColors.greyLight,
+      highlightColor: AppColors.surface,
       child: SingleChildScrollView(
         physics: const NeverScrollableScrollPhysics(),
         child: Column(
           children: [
-            // ── Header Shimmer ──
             _buildHeaderShimmer(context),
             SizedBox(height: rs(context, 12)),
 
-            // ── Quick Actions Shimmer ──
             Padding(
               padding: EdgeInsets.symmetric(horizontal: rs(context, 16)),
               child: _buildQuickActionsShimmer(context),
             ),
             SizedBox(height: rs(context, 12)),
 
-            // ── Settings Section Shimmer ──
             _buildSettingsSectionShimmer(context),
             SizedBox(height: rs(context, 12)),
 
-            // ── Logout Button Shimmer ──
             Padding(
               padding: EdgeInsets.symmetric(horizontal: rs(context, 20)),
               child: _shimmerBox(
@@ -49,26 +47,22 @@ class ProfileShimmer extends StatelessWidget {
   Widget _buildHeaderShimmer(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: Colors.white,
+      color: AppColors.surface,
       padding: EdgeInsets.symmetric(
         vertical: rs(context, 28),
         horizontal: rs(context, 20),
       ),
       child: Column(
         children: [
-          // Avatar circle
           _shimmerCircle(radius: rs(context, 52)),
           SizedBox(height: rs(context, 14)),
 
-          // Name
           _shimmerBox(width: rs(context, 160), height: rs(context, 18)),
           SizedBox(height: rs(context, 8)),
 
-          // Email
           _shimmerBox(width: rs(context, 200), height: rs(context, 13)),
           SizedBox(height: rs(context, 10)),
 
-          // Phone badge
           _shimmerBox(
             width: rs(context, 130),
             height: rs(context, 30),
@@ -85,17 +79,15 @@ class ProfileShimmer extends StatelessWidget {
       width: double.infinity,
       padding: EdgeInsets.all(rs(context, 16)),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(rs(context, 12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section title
           _shimmerBox(width: rs(context, 120), height: rs(context, 16)),
           SizedBox(height: rs(context, 14)),
 
-          // Two action buttons
           Row(
             children: [
               Expanded(
@@ -124,16 +116,14 @@ class ProfileShimmer extends StatelessWidget {
   Widget _buildSettingsSectionShimmer(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: Colors.white,
+      color: AppColors.surface,
       padding: EdgeInsets.all(rs(context, 16)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Section title
           _shimmerBox(width: rs(context, 80), height: rs(context, 16)),
           SizedBox(height: rs(context, 16)),
 
-          // 4 setting tiles
           ...List.generate(4, (index) => _buildSettingTileShimmer(context)),
         ],
       ),
@@ -145,7 +135,6 @@ class ProfileShimmer extends StatelessWidget {
       padding: EdgeInsets.only(bottom: rs(context, 16)),
       child: Row(
         children: [
-          // Icon box
           _shimmerBox(
             width: rs(context, 38),
             height: rs(context, 38),
@@ -153,7 +142,6 @@ class ProfileShimmer extends StatelessWidget {
           ),
           SizedBox(width: rs(context, 14)),
 
-          // Title + subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +153,6 @@ class ProfileShimmer extends StatelessWidget {
             ),
           ),
 
-          // Chevron
           _shimmerBox(
             width: rs(context, 18),
             height: rs(context, 18),
@@ -186,7 +173,7 @@ class ProfileShimmer extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(radius),
       ),
     );
@@ -196,8 +183,8 @@ class ProfileShimmer extends StatelessWidget {
     return Container(
       width: radius * 2,
       height: radius * 2,
-      decoration: const BoxDecoration(
-        color: Colors.white,
+      decoration: BoxDecoration(
+        color: AppColors.white,
         shape: BoxShape.circle,
       ),
     );

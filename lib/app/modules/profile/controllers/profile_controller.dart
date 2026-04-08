@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../../../../core/api/Api_Service/Logout/logout.dart';
 import '../../../../core/api/Api_Service/Profile/profile.dart';
+import '../../../../core/constants/theme_controller.dart';
 import '../../../../core/utils/app_storage.dart';
 import '../../../../core/utils/custome_snakbar.dart';
 import '../../../../core/utils/device_info_service.dart';
@@ -83,6 +84,7 @@ class ProfileController extends GetxController {
         await AppStorage.clearWorkerAuthData();
         Get.deleteAll(force: true);
         Get.offAllNamed(Routes.LOGIN);
+        Get.put(ThemeController(), permanent: true);
       } else {
         CustomSnackbar.showError("Error", response["message"]);
       }

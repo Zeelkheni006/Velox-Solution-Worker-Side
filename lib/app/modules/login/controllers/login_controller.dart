@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../../core/api/Api_Service/Auth/auth_api.dart';
 import '../../../../core/api/api_endpoints.dart';
+import '../../../../core/constants/theme_controller.dart';
 import '../../../../core/utils/app_storage.dart';
 import '../../../../core/utils/custome_snakbar.dart';
 import '../../../../core/utils/device_info_service.dart';
@@ -24,6 +25,7 @@ class LoginController extends GetxController {
   void onInit() {
     super.onInit();
     DeviceInfoService.fetchDeviceInfo();
+    Get.put(ThemeController(), permanent: true);
 
     credentialController.addListener(() {
       _phoneInputLimiter();
