@@ -20,6 +20,8 @@ class AppTheme {
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.appbar,
       elevation: 0,
+      scrolledUnderElevation: 0, // ⭐ ADD THIS
+      surfaceTintColor: Colors.transparent, // ⭐ ADD THIS
       centerTitle: true,
       iconTheme: IconThemeData(color: AppColors.black),
       titleTextStyle: TextStyle(
@@ -49,6 +51,8 @@ class AppTheme {
     appBarTheme: AppBarTheme(
       backgroundColor: AppColors.appbar,
       elevation: 0,
+      scrolledUnderElevation: 0, // ⭐ ADD THIS
+      surfaceTintColor: Colors.transparent, // ⭐ ADD THIS
       centerTitle: true,
       iconTheme: IconThemeData(color: AppColors.black),
       titleTextStyle: TextStyle(
