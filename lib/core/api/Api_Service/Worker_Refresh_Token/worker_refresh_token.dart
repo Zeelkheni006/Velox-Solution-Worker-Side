@@ -16,10 +16,9 @@ class WorkerRefreshToken {
   static Future<bool>? _refreshFuture;
 
   static Future<bool> handleRefreshToken() async {
-    // Je ek refresh already chal rahi hoy to same future return karo
-    print("HELLO 1");
+
     if (_isRefreshing && _refreshFuture != null) {
-      print("HELLO 2");
+
       return _refreshFuture!;
     }
 
@@ -38,11 +37,9 @@ class WorkerRefreshToken {
   static Future<bool> _doRefresh() async {
     try {
       final refreshToken = await AppStorage.getWorkerRefreshToken();
-      print("🔑 Refresh token from storage: '$refreshToken'");
-      print("HELLO 3");
+      print("Refresh token from storage: '$refreshToken'");
 
       if (refreshToken == null || refreshToken.isEmpty) {
-        print("HELLO 4");
         await _forceLogout();
         return false;
       }
@@ -54,7 +51,6 @@ class WorkerRefreshToken {
       final response = await http.post(
         Uri.parse(ApiUrl.baseUrl + ApiUrl.refreshToken),
         headers: {
-          // "Content-Type": "application/json",
           "Authorization": "Bearer $refreshToken",
           "X-Device-Id":   DeviceInfoService.deviceId   ?? '',
           "X-Device-Name": DeviceInfoService.deviceName ?? '',
@@ -69,13 +65,12 @@ class WorkerRefreshToken {
       print("DEVICE TYPE ::: ${DeviceInfoService.deviceType}");
       print("OS VERSION ::: ${DeviceInfoService.osVersion}");
 
-      print("🔁 REFRESH TOKEN STATUS ::: ${response.statusCode}");
-      print("🔁 REFRESH TOKEN BODY  ::: ${response.body}");
+      print("REFRESH TOKEN STATUS ::: ${response.statusCode}");
+      print("REFRESH TOKEN BODY  ::: ${response.body}");
 
       final data = jsonDecode(response.body);
 
       if (response.statusCode == 200 && data['success'] == true) {
-        print("HELLO 5");
         final tokenData = data['data'];
 
         final newAccessToken  = tokenData['worker_access_token']  as String?;
@@ -83,7 +78,6 @@ class WorkerRefreshToken {
         final workerId        = int.tryParse(tokenData['worker_id']?.toString() ?? '0') ?? 0;
 
         if (newAccessToken == null || newAccessToken.isEmpty) {
-          print("HELLO 6");
           await _forceLogout();
           return false;
         }
@@ -94,19 +88,16 @@ class WorkerRefreshToken {
           workerId:     workerId,
         );
 
-        print("✅ Worker tokens refreshed successfully");
+        print("Worker tokens refreshed successfully");
         return true;
 
       } else {
-        // worker_refresh_token pan expire — force logout
-        print("HELLO 7");
         await _forceLogout();
         return false;
       }
 
     } catch (e) {
-      print("❌ REFRESH TOKEN ERROR ::: $e");
-      print("HELLO 8");
+      print("REFRESH TOKEN ERROR ::: $e");
       await _forceLogout();
       return false;
     }
