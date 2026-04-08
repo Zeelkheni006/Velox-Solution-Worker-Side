@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:apilearning/core/constants/app_colors.dart';
 
 class OrderShimmerItem extends StatelessWidget {
   const OrderShimmerItem({super.key});
@@ -7,13 +8,13 @@ class OrderShimmerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
+      baseColor: AppColors.greyLight,
+      highlightColor: AppColors.surface,
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.white,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Column(
@@ -63,7 +64,7 @@ class OrderShimmerItem extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.greyLight,
         borderRadius: BorderRadius.circular(radius),
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:apilearning/core/constants/app_colors.dart';
 
 class UpcomingOrderShimmerItem extends StatelessWidget {
   const UpcomingOrderShimmerItem({super.key});
@@ -7,19 +8,20 @@ class UpcomingOrderShimmerItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
-      baseColor: Colors.grey.shade300,
-      highlightColor: Colors.grey.shade100,
+      baseColor: AppColors.greyLight,
+      highlightColor: AppColors.white.withOpacity(0.6),
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Top Row: Order ID + Status Badge
+            /// Top Row: Order ID + Status Badge
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -29,19 +31,19 @@ class UpcomingOrderShimmerItem extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // Customer Name
+            /// Customer Name
             _shimmerBox(width: 170, height: 14),
             const SizedBox(height: 8),
 
-            // Address line 1
+            /// Address line 1
             _shimmerBox(width: double.infinity, height: 12),
             const SizedBox(height: 6),
 
-            // Address line 2
+            /// Address line 2
             _shimmerBox(width: 200, height: 12),
             const SizedBox(height: 14),
 
-            // Bottom Row: Price + Scheduled Time
+            /// Bottom Row: Price + Scheduled Time
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -64,7 +66,7 @@ class UpcomingOrderShimmerItem extends StatelessWidget {
       width: width,
       height: height,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.greyLight,
         borderRadius: BorderRadius.circular(radius),
       ),
     );

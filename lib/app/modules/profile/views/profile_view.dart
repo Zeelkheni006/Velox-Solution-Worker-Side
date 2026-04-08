@@ -5,6 +5,7 @@ import '../../../../core/Shimmer/profile_shimmer.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_radius.dart';
 import '../../../../core/constants/app_text_styles.dart';
+import '../../../../core/constants/theme_controller.dart';
 import '../../../../core/utils/app_responsive.dart';
 import '../../../../core/utils/custom_container.dart';
 import '../../../../core/utils/custome_snakbar.dart';
@@ -108,7 +109,7 @@ class ProfileView extends GetView<ProfileController> {
               ),
               child: Container(
                 padding: EdgeInsets.all(rs(context, 2)),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.white,
                   shape: BoxShape.circle,
                 ),
@@ -340,6 +341,8 @@ class ProfileView extends GetView<ProfileController> {
               ),
             ),
           ),
+          _buildThemeSelector(context),
+          _buildDivider(context),
           _buildSettingsTile(
             context: context,
             icon: Icons.history_rounded,
@@ -523,6 +526,125 @@ class ProfileView extends GetView<ProfileController> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildThemeSelector(BuildContext context) {
+    final themeCtrl = Get.find<ThemeController>();
+
+    final options = [
+      {'key': 'light',  'icon': Icons.light_mode_outlined,    'label': 'Light'},
+      {'key': 'system', 'icon': Icons.brightness_auto_outlined,'label': 'System'},
+      {'key': 'dark',   'icon': Icons.dark_mode_outlined,     'label': 'Dark'},
+    ];
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: rs(context, 20),
+        vertical: rs(context, 12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(rs(context, 8)),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(rs(context, 10)),
+                ),
+                child: Icon(
+                  Icons.brightness_6_outlined,
+                  color: AppColors.primary,
+                  size: rs(context, 20),
+                ),
+              ),
+              SizedBox(width: rs(context, 14)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Appearance',
+                      style: AppTextStyles.bodyMedium(context).copyWith(
+                        fontSize: rs(context, 15),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: rs(context, 2)),
+                    Text(
+                      'Choose your theme',
+                      style: AppTextStyles.caption(context),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: rs(context, 12)),
+          Obx(() {
+            final current = themeCtrl.themeMode.value;
+            return Row(
+              children: options.map((opt) {
+                final key    = opt['key'] as String;
+                final icon   = opt['icon'] as IconData;
+                final label  = opt['label'] as String;
+                final active = current == key;
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () => themeCtrl.setTheme(key),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: EdgeInsets.only(
+                        right: key != 'dark' ? rs(context, 8) : 0,
+                      ),
+                      padding: EdgeInsets.symmetric(vertical: rs(context, 10)),
+                      decoration: BoxDecoration(
+                        color: active
+                            ? AppColors.primary.withOpacity(0.1)
+                            : AppColors.surface,
+                        borderRadius: BorderRadius.circular(rs(context, 10)),
+                        border: Border.all(
+                          color: active
+                              ? AppColors.primary
+                              : AppColors.border,
+                          width: active ? rs(context, 1.5) : rs(context, 1),
+                        ),
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            icon,
+                            size: rs(context, 20),
+                            color: active
+                                ? AppColors.primary
+                                : AppColors.textSecondary,
+                          ),
+                          SizedBox(height: rs(context, 4)),
+                          Text(
+                            label,
+                            style: AppTextStyles.caption(context).copyWith(
+                              color: active
+                                  ? AppColors.primary
+                                  : AppColors.textSecondary,
+                              fontWeight: active
+                                  ? FontWeight.w700
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            );
+          }),
+        ],
       ),
     );
   }

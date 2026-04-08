@@ -52,9 +52,9 @@ class LoginScreen extends GetView<LoginController> {
                     _buildPasswordInput(context),
       
                     // FORGOT PASSWORD
-                    _buildForgotPassword(context),
+                    // _buildForgotPassword(context),
       
-                    SizedBox(height: rs(context, 12)),
+                    SizedBox(height: rs(context, 38)),
       
                     // LOGIN BUTTON
                     _buildLoginButton(context),
