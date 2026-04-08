@@ -1,12 +1,8 @@
-// lib/features/dashboard/presentation/controllers/dashboard_controller.dart
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../../core/utils/app_storage.dart';
 
-class DashboardController extends GetxController
-    with GetSingleTickerProviderStateMixin {
+class DashboardController extends GetxController with GetSingleTickerProviderStateMixin {
 
   late TabController tabController;
 
