@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:battery_plus/battery_plus.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import '../../../core/App_Safety/app_safety.dart';
 import '../../../core/api/Api_Service/Live_Location/live_location.dart';
 
 class LiveLocationController extends GetxController {
@@ -46,7 +47,7 @@ class LiveLocationController extends GetxController {
       );
 
     } catch (e) {
-      print("LOCATION FETCH ERROR: $e");
+      logPrint("LOCATION FETCH ERROR: $e");
     }
   }
 

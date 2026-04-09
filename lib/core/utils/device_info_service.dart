@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 
+import '../App_Safety/app_safety.dart';
+
 class DeviceInfoService {
   static final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
 
@@ -29,13 +31,13 @@ class DeviceInfoService {
         osVersion = 'iOS ${iosInfo.systemVersion}';
       }
 
-      print('DEVICE ID ::: $deviceId');
-      print('DEVICE TYPE ::: $deviceType');
-      print('DEVICE NAME ::: $deviceName');
-      print('OS VERSION ::: $osVersion');
+      logPrint('DEVICE ID ::: $deviceId');
+      logPrint('DEVICE TYPE ::: $deviceType');
+      logPrint('DEVICE NAME ::: $deviceName');
+      logPrint('OS VERSION ::: $osVersion');
 
     } catch (e) {
-      print("DEVICE INFO ERROR ::: $e");
+      logPrint("DEVICE INFO ERROR ::: $e");
     }
   }
 

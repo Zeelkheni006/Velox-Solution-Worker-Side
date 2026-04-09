@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import '../../../../app/routes/app_pages.dart';
+import '../../../App_Safety/app_safety.dart';
 import '../../../utils/app_storage.dart';
 import '../../../utils/custome_snakbar.dart';
 import '../../../utils/device_info_service.dart';
@@ -37,7 +38,7 @@ class WorkerRefreshToken {
   static Future<bool> _doRefresh() async {
     try {
       final refreshToken = await AppStorage.getWorkerRefreshToken();
-      print("Refresh token from storage: '$refreshToken'");
+      logPrint("Refresh token from storage: '$refreshToken'");
 
       if (refreshToken == null || refreshToken.isEmpty) {
         await _forceLogout();
@@ -59,14 +60,14 @@ class WorkerRefreshToken {
         },
       );
 
-      print("AUTHORIZATION ::: $refreshToken");
-      print("DEVICE ID ::: ${DeviceInfoService.deviceId}");
-      print("DEVICE NAME ::: ${DeviceInfoService.deviceName}");
-      print("DEVICE TYPE ::: ${DeviceInfoService.deviceType}");
-      print("OS VERSION ::: ${DeviceInfoService.osVersion}");
+      logPrint("AUTHORIZATION ::: $refreshToken");
+      logPrint("DEVICE ID ::: ${DeviceInfoService.deviceId}");
+      logPrint("DEVICE NAME ::: ${DeviceInfoService.deviceName}");
+      logPrint("DEVICE TYPE ::: ${DeviceInfoService.deviceType}");
+      logPrint("OS VERSION ::: ${DeviceInfoService.osVersion}");
 
-      print("REFRESH TOKEN STATUS ::: ${response.statusCode}");
-      print("REFRESH TOKEN BODY  ::: ${response.body}");
+      logPrint("REFRESH TOKEN STATUS ::: ${response.statusCode}");
+      logPrint("REFRESH TOKEN BODY  ::: ${response.body}");
 
       final data = jsonDecode(response.body);
 
@@ -88,7 +89,7 @@ class WorkerRefreshToken {
           workerId:     workerId,
         );
 
-        print("Worker tokens refreshed successfully");
+        logPrint("Worker tokens refreshed successfully");
         return true;
 
       } else {
@@ -97,7 +98,7 @@ class WorkerRefreshToken {
       }
 
     } catch (e) {
-      print("REFRESH TOKEN ERROR ::: $e");
+      logPrint("REFRESH TOKEN ERROR ::: $e");
       await _forceLogout();
       return false;
     }

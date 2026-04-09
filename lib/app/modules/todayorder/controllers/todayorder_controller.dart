@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order.dart';
 import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order_model.dart';
 
@@ -26,7 +27,7 @@ class TodayOrderController extends GetxController {
         todayOrders.clear();
       }
     } catch (e) {
-      print("TODAY ORDER CONTROLLER ERROR ::: $e");
+      logPrint("TODAY ORDER CONTROLLER ERROR ::: $e");
       todayOrders.clear();
     } finally {
       isTodayOrderLoading(false);
@@ -45,7 +46,7 @@ class TodayOrderController extends GetxController {
         todayOrders.clear();
       }
     } catch (e) {
-      print("TODAY ORDER REFRESH ERROR ::: $e");
+      logPrint("TODAY ORDER REFRESH ERROR ::: $e");
     } finally {
       isRefreshing(false);
     }

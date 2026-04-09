@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../App_Safety/app_safety.dart';
 import '../../../utils/app_storage.dart';
 import '../../api_endpoints.dart';
 import '../Worker_Refresh_Token/worker_api_service.dart';
@@ -37,7 +38,7 @@ class LiveLocationService {
           body: body,
         );
 
-        print("LOGIN LIVE LOCATION RESPONSE ::: ${response.body}");
+        logPrint("LOGIN LIVE LOCATION RESPONSE ::: ${response.body}");
 
         return jsonDecode(response.body);
       } else {
@@ -47,7 +48,7 @@ class LiveLocationService {
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode(body),
         );
-        print("NOT LOGIN LIVE LOCATION RESPONSE ::: ${response.body}");
+        logPrint("NOT LOGIN LIVE LOCATION RESPONSE ::: ${response.body}");
         return jsonDecode(response.body);
       }
     } catch (e) {

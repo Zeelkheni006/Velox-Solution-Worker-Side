@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Worker_Leave/worker_leave.dart';
 import '../../../../core/utils/custome_snakbar.dart';
 
@@ -21,7 +22,7 @@ class LeavehistoryController extends GetxController {
       isLoading(true);
 
       final response = await WorkerLeaveApi.requestLeaveHistory();
-      debugPrint("LEAVE HISTORY ::: $response");
+      logPrint("LEAVE HISTORY ::: $response");
 
       final data = response['data'];
 
@@ -30,12 +31,12 @@ class LeavehistoryController extends GetxController {
       } else {
 
         leaveList.clear();
-        debugPrint("LEAVE HISTORY: Data is not a list");
+        logPrint("LEAVE HISTORY: Data is not a list");
       }
 
     } catch (e) {
       // CustomSnackbar.showError('Error', e.toString());
-      debugPrint("LEAVE HISTORY ERROR ::: ${e.toString()}");
+      logPrint("LEAVE HISTORY ERROR ::: ${e.toString()}");
     } finally {
       isLoading(false);
     }
@@ -50,7 +51,7 @@ class LeavehistoryController extends GetxController {
   Future<void> refreshHistory() async {
     try {
       final data = await WorkerLeaveApi.requestLeaveHistory();
-      debugPrint("LEAVE HISTORY REFRESHED ::: $data");
+      logPrint("LEAVE HISTORY REFRESHED ::: $data");
       leaveList.assignAll((data as List).reversed.toList());
     } catch (e) {
     }

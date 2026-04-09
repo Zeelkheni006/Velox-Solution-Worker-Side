@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/App_Safety/app_safety.dart';
 import '../../../core/api/Api_Service/Live_Location/live_location.dart';
 
 class AppLifecycleHandler extends StatefulWidget {
@@ -34,7 +35,7 @@ class _AppLifecycleHandlerState extends State<AppLifecycleHandler>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    print("APP STATE: $state");
+    logPrint("APP STATE: $state");
 
     if (state == AppLifecycleState.resumed) {
       // App foreground ma aave

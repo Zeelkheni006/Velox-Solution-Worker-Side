@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/api_service/Worker_Leave/worker_leave.dart';
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/utils/custome_snakbar.dart';
@@ -46,7 +47,7 @@ class WorkerleaveController extends GetxController {
         }
       }
     } catch (e) {
-      debugPrint("Check Leave Error: $e");
+      logPrint("Check Leave Error: $e");
     } finally {
       isLoading.value = false;
     }
@@ -70,7 +71,7 @@ class WorkerleaveController extends GetxController {
         showStatusUI.value = true;
       }
     } catch (e) {
-      debugPrint("Status Error: $e");
+      logPrint("Status Error: $e");
     }
   }
 
@@ -146,7 +147,7 @@ class WorkerleaveController extends GetxController {
       }
 
     } catch (e) {
-      debugPrint("Refresh Error: $e");
+      logPrint("Refresh Error: $e");
     }
   }
 

@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Auth/auth_api.dart';
+import '../../../../core/api/Api_Service/Send_Fcm_Token/send_fcm_token.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/utils/app_storage.dart';
 import '../../../../core/utils/custome_snakbar.dart';
@@ -119,7 +121,7 @@ class OtpverifyscreenController extends GetxController {
         },
       );
 
-      debugPrint("WORKER RESEND OTP RESPONSE ::: $response");
+      logPrint("WORKER RESEND OTP RESPONSE ::: $response");
 
       if (response['success'] == true) {
         // OTP field clear
@@ -147,7 +149,7 @@ class OtpverifyscreenController extends GetxController {
         CustomSnackbar.showError("Resend Failed", errorMessage);
       }
     } catch (e) {
-      debugPrint("WORKER RESEND OTP ERROR ::: $e");
+      logPrint("WORKER RESEND OTP ERROR ::: $e");
       CustomSnackbar.showError("Error", "Something went wrong. Please try again");
     } finally {
       isResending.value = false;
@@ -179,7 +181,7 @@ class OtpverifyscreenController extends GetxController {
 
       FullScreenLoader.hide();
 
-      debugPrint("OTP VERIFY RESPONSE ::: $response");
+      logPrint("OTP VERIFY RESPONSE ::: $response");
 
       if (response['success'] == true) {
         final data = response['data'] ?? {};
@@ -190,6 +192,8 @@ class OtpverifyscreenController extends GetxController {
           workerId: int.tryParse(data['worker_id']?.toString() ?? '0') ?? 0,
         );
 
+        await SendFcmToken.sendFcmToken();
+
         CustomSnackbar.showSuccess("Success", "Login successful");
         Get.offAllNamed(Routes.DASHBOARD);
         return;
@@ -199,8 +203,8 @@ class OtpverifyscreenController extends GetxController {
 
     } catch (e, stack) {
       FullScreenLoader.hide();
-      debugPrint("OTP VERIFY ERROR ::: $e");
-      debugPrint("STACK TRACE ::: $stack");
+      logPrint("OTP VERIFY ERROR ::: $e");
+      logPrint("STACK TRACE ::: $stack");
       CustomSnackbar.showError("Error", "Something went wrong");
     }
   }

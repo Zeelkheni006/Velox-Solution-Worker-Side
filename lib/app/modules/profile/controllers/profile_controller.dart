@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Logout/logout.dart';
 import '../../../../core/api/Api_Service/Profile/profile.dart';
 import '../../../../core/constants/theme_controller.dart';
@@ -26,7 +27,7 @@ class ProfileController extends GetxController {
       isLoading.value = true;
       final response = await ProfileApi.getProfileData();
 
-      print("PROFILE RESPONSE ::: $response");
+      logPrint("PROFILE RESPONSE ::: $response");
 
       if (response["success"]) {
         worker.value = response["data"];

@@ -1,5 +1,7 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../App_Safety/app_safety.dart';
+
 class AppStorage {
 
 // ==================================================================================================== //
@@ -22,7 +24,7 @@ class AppStorage {
     await prefs.setInt(_workerId, workerId);
     await prefs.setBool(_isWorkerLoggedIn, true);
 
-    print("✅ Worker auth data saved");
+    logPrint("✅ Worker auth data saved");
   }
 
   // ==================== GET WORKER DATA ====================
@@ -55,7 +57,7 @@ class AppStorage {
     await prefs.remove(_workerId);
     await prefs.remove(_isWorkerLoggedIn);
 
-    print("🗑️ Worker auth data cleared");
+    logPrint("🗑️ Worker auth data cleared");
   }
 
 // ==================================================================================================== //

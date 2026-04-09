@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Cancel_Order_By_Worker/cancel_order_by_worker.dart';
 import '../../../../core/api/Api_Service/Close_Order/close_order.dart';
 import '../../../../core/api/Api_Service/Order_Status/order_status.dart';
@@ -57,7 +58,7 @@ class OrderDetailsController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    print("CURRENT ORDER ID ::: $orderId");
+    logPrint("CURRENT ORDER ID ::: $orderId");
     _initPage();
   }
 
@@ -77,14 +78,14 @@ class OrderDetailsController extends GetxController {
     try {
       // Fetch order details silently (no loader — RefreshIndicator is the UI)
       final response = await OrderApi.getOrderDetails(orderId);
-      print("REFRESH ORDER DETAILS ::: $response");
+      logPrint("REFRESH ORDER DETAILS ::: $response");
       if (response['success'] == true && response['data'] != null) {
         order.value = OrderModel.fromJson(response['data']);
       }
 
       // Re-check order status
       final res = await OrderStatus.workerOrderStatus(orderId);
-      print("REFRESH ORDER STATUS ::: $res");
+      logPrint("REFRESH ORDER STATUS ::: $res");
 
       if (res['success'] == true) {
         final otpVerified = res['message']?['otp_verified'] ?? false;
@@ -104,7 +105,7 @@ class OrderDetailsController extends GetxController {
         }
       }
     } catch (e) {
-      print("REFRESH ORDER ERROR ::: $e");
+      logPrint("REFRESH ORDER ERROR ::: $e");
       // Show a gentle snackbar on failure but don't crash
       CustomSnackbar.showError("Refresh Failed", "Could not refresh order. Please try again.");
     }
@@ -161,7 +162,7 @@ class OrderDetailsController extends GetxController {
       _compressionFutures[slotIndex]!.then((compressed) {
         if (compressed != null) {
           _compressedCache[slotIndex] = compressed;
-          print(
+          logPrint(
             "✅ Slot $slotIndex compressed: "
                 "${originalFile.lengthSync()} → ${compressed.lengthSync()} bytes "
                 "(${((1 - compressed.lengthSync() / originalFile.lengthSync()) * 100).toStringAsFixed(0)}% smaller)",
@@ -171,7 +172,7 @@ class OrderDetailsController extends GetxController {
 
       return true;
     } catch (e) {
-      print("CAPTURE IMAGE ERROR ::: $e");
+      logPrint("CAPTURE IMAGE ERROR ::: $e");
       CustomSnackbar.showError("Error", "Could not open camera.");
       return false;
     }
@@ -194,7 +195,7 @@ class OrderDetailsController extends GetxController {
 
       return result != null ? File(result.path) : null;
     } catch (e) {
-      print("COMPRESS ERROR slot $index ::: $e");
+      logPrint("COMPRESS ERROR slot $index ::: $e");
       return null;
     }
   }
@@ -250,9 +251,9 @@ class OrderDetailsController extends GetxController {
         }
       }
 
-      print("UPLOADING ${uploadImages.length} images:");
+      logPrint("UPLOADING ${uploadImages.length} images:");
       uploadImages.asMap().forEach((i, f) {
-        print("  Slot $i: ${(f.lengthSync() / 1024).toStringAsFixed(0)} KB");
+        logPrint("  Slot $i: ${(f.lengthSync() / 1024).toStringAsFixed(0)} KB");
       });
 
       final res = await OrderStatus.orderComplete(
@@ -260,7 +261,7 @@ class OrderDetailsController extends GetxController {
         imageFiles: uploadImages,
       );
 
-      print("ORDER COMPLETE RESPONSE ::: $res");
+      logPrint("ORDER COMPLETE RESPONSE ::: $res");
 
       FullScreenLoader.hide();
 
@@ -314,7 +315,7 @@ class OrderDetailsController extends GetxController {
         CustomSnackbar.showError("Error", errorMessage);
       }
     } catch (e) {
-      print("COMPLETE ORDER ERROR ::: $e");
+      logPrint("COMPLETE ORDER ERROR ::: $e");
       FullScreenLoader.hide();
       CustomSnackbar.showError(
           "Error", "Something went wrong. Please try again.");
@@ -335,7 +336,7 @@ class OrderDetailsController extends GetxController {
     try {
       final res = await CloseOrder.closeOrder(orderId);
 
-      print("CLOSE ORDER RESPONSE ::: $res");
+      logPrint("CLOSE ORDER RESPONSE ::: $res");
 
       FullScreenLoader.hide();
 
@@ -360,7 +361,7 @@ class OrderDetailsController extends GetxController {
         );
       }
     } catch (e) {
-      print("CLOSE ORDER ERROR ::: $e");
+      logPrint("CLOSE ORDER ERROR ::: $e");
       FullScreenLoader.hide();
       CustomSnackbar.showError(
           "Error", "Something went wrong. Please try again.");
@@ -380,7 +381,7 @@ class OrderDetailsController extends GetxController {
         visitingFee: visitingFee,
       );
 
-      print("CANCEL ORDER RESPONSE ::: $res");
+      logPrint("CANCEL ORDER RESPONSE ::: $res");
 
       FullScreenLoader.hide();
 
@@ -404,7 +405,7 @@ class OrderDetailsController extends GetxController {
         CustomSnackbar.showError("Error", errText);
       }
     } catch (e) {
-      print("CANCEL ORDER ERROR ::: $e");
+      logPrint("CANCEL ORDER ERROR ::: $e");
       FullScreenLoader.hide();
       CustomSnackbar.showError(
           "Error", "Something went wrong. Please try again.");
@@ -419,7 +420,7 @@ class OrderDetailsController extends GetxController {
     try {
       isLoading(true);
       final response = await OrderApi.getOrderDetails(orderId);
-      print("ORDER DETAILS RESPONSE ::: $response");
+      logPrint("ORDER DETAILS RESPONSE ::: $response");
       if (response['success'] == true && response['data'] != null) {
         order.value = OrderModel.fromJson(response['data']);
       }
@@ -431,7 +432,7 @@ class OrderDetailsController extends GetxController {
   Future<void> checkOrderStatus() async {
     try {
       final res = await OrderStatus.workerOrderStatus(orderId);
-      print("ORDER STATUS ::: $res");
+      logPrint("ORDER STATUS ::: $res");
 
       if (res['success'] == true) {
         final otpVerified = res['message']?['otp_verified'] ?? false;
@@ -451,7 +452,7 @@ class OrderDetailsController extends GetxController {
         }
       }
     } catch (e) {
-      print("ORDER STATUS ERROR ::: $e");
+      logPrint("ORDER STATUS ERROR ::: $e");
     }
   }
 
@@ -459,7 +460,7 @@ class OrderDetailsController extends GetxController {
     try {
       FullScreenLoader.show(message: "Sending OTP...");
       final res = await SendOtp.verifyUserSendOtp(orderId);
-      print("OTP RESPONSE ::: $res");
+      logPrint("OTP RESPONSE ::: $res");
       if (res['success'] == true) {
         final message = res['message']['message'];
         final expiresIn = res['message']['expires_in'];
@@ -482,7 +483,7 @@ class OrderDetailsController extends GetxController {
       }
     } catch (e) {
       FullScreenLoader.hide();
-      print("SEND OTP ERROR ::: $e");
+      logPrint("SEND OTP ERROR ::: $e");
       CustomSnackbar.showError(
           "Error", "Something went wrong. Please try again.");
     }
@@ -495,7 +496,7 @@ class OrderDetailsController extends GetxController {
         otpController.text.trim(),
       );
 
-      print("CONFIRM OTP RESPONSE ::: $res");
+      logPrint("CONFIRM OTP RESPONSE ::: $res");
 
       if (res['success'] == true) {
         isOtpVerified.value = true;
@@ -519,7 +520,7 @@ class OrderDetailsController extends GetxController {
         );
       }
     } catch (e) {
-      print("CONFIRM OTP ERROR ::: $e");
+      logPrint("CONFIRM OTP ERROR ::: $e");
       CustomSnackbar.showError(
           "Error", "Something went wrong. Please try again.");
     }

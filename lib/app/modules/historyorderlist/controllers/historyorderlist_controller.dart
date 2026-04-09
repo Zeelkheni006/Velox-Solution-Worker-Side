@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order.dart';
 import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order_model.dart';
 
@@ -26,7 +27,7 @@ class HistoryOrdersListController extends GetxController {
         historyOrders.clear();
       }
     } catch (e) {
-      print("HISTORY ORDER CONTROLLER ERROR ::: $e");
+      logPrint("HISTORY ORDER CONTROLLER ERROR ::: $e");
       historyOrders.clear();
     } finally {
       isHistoryOrderLoading(false);
@@ -45,7 +46,7 @@ class HistoryOrdersListController extends GetxController {
         historyOrders.clear();
       }
     } catch (e) {
-      print("HISTORY ORDER REFRESH ERROR ::: $e");
+      logPrint("HISTORY ORDER REFRESH ERROR ::: $e");
     } finally {
       isRefreshing(false);
     }
