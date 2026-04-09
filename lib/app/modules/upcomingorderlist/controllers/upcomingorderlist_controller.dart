@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order.dart';
 import '../../../../core/api/Api_Service/Today_Order/today-upcoming-old_order_model.dart';
 
@@ -26,7 +27,7 @@ class UpcomingOrdersListController extends GetxController {
         upcomingOrders.clear();
       }
     } catch (e) {
-      print("UPCOMING ORDER CONTROLLER ERROR ::: $e");
+      logPrint("UPCOMING ORDER CONTROLLER ERROR ::: $e");
       upcomingOrders.clear();
     } finally {
       isUpcomingOrderLoading(false);
@@ -45,7 +46,7 @@ class UpcomingOrdersListController extends GetxController {
         upcomingOrders.clear();
       }
     } catch (e) {
-      print("UPCOMING ORDER REFRESH ERROR ::: $e");
+      logPrint("UPCOMING ORDER REFRESH ERROR ::: $e");
     } finally {
       isRefreshing(false);
     }

@@ -108,7 +108,7 @@
 //         _updateMapAndMarkers(position);
 //       }
 //     } catch (e) {
-//       print("Error fetching location: $e");
+//       logPrint("Error fetching location: $e");
 //     }
 //   }
 //

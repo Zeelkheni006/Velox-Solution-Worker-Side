@@ -21,6 +21,7 @@ import '../../../../core/utils/full_screen_loader.dart';
 import '../../../../core/api/Api_Service/Reschedule_Slots/reschedule_slots.dart';
 import '../../app/modules/orderdetails/controllers/order_details_controller.dart';
 import '../../app/routes/app_pages.dart';
+import '../App_Safety/app_safety.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Local models
@@ -270,7 +271,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
       }
     } catch (e) {
       FullScreenLoader.hide();
-      print('RESCHEDULE CONFIRM ERROR ::: $e');
+      logPrint('RESCHEDULE CONFIRM ERROR ::: $e');
       CustomSnackbar.showError(
           'Error', 'Something went wrong. Please try again.');
     }

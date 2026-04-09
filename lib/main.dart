@@ -37,10 +37,17 @@
 // }
 
 
+import 'dart:ui';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'app/modules/livelocation/live_location_controller.dart';
 import 'app/routes/app_pages.dart';
+import 'core/App_Safety/app_safety.dart';
 import 'core/constants/app_theme.dart';
 import 'core/constants/theme_controller.dart';
 import 'core/utils/device_info_service.dart';
@@ -50,6 +57,8 @@ import 'core/utils/app_lifecycle_handler.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await Firebase.initializeApp();
+
   await DeviceInfoService.fetchDeviceInfo();
   await SecurityService.runSecurityChecks();
 
@@ -57,7 +66,32 @@ Future<void> main() async {
   Get.put(LiveLocationController(), permanent: true);
   Get.put(ThemeController(), permanent: true);
 
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
+  await getFcmToken();
+
+  // Crashlytics setup
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+  PlatformDispatcher dispatcher = WidgetsBinding.instance.platformDispatcher;
+  dispatcher.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   runApp(MyApp(themeCtrl: themeCtrl));
+}
+
+Future<void> getFcmToken() async {
+  FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+  await messaging.requestPermission();
+
+  String? token = await messaging.getToken();
+
+  logPrint("FCM TOKEN ::: $token");
 }
 
 class MyApp extends StatelessWidget {

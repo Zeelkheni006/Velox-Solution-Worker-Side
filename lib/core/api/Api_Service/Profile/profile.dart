@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../../../App_Safety/app_safety.dart';
 import '../../../utils/app_storage.dart';
 import '../../api_endpoints.dart';
 import '../Worker_Refresh_Token/worker_api_service.dart';
@@ -55,9 +56,9 @@ class ProfileApi {
     );
 
     // 🔹 PRINT RESPONSE DATA
-    print("Status Code: ${response.statusCode}");
-    print("Raw Response Body:");
-    print(response.body);
+    logPrint("Status Code: ${response.statusCode}");
+    logPrint("Raw Response Body:");
+    logPrint(response.body);
 
     final decodedResponse = jsonDecode(response.body);
     return decodedResponse;

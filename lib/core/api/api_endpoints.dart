@@ -5,11 +5,11 @@ class ApiUrl {
   // static const String baseUrl = "http://72.61.245.134:8000";
 
   // ZEEL //
-  // static const String baseUrl = "http://192.168.29.69:5000";
+  static const String baseUrl = "http://192.168.29.69:5000";
 
 
   // HARSH //
-  static const String baseUrl = "http://192.168.29.164:5000";
+  // static const String baseUrl = "http://192.168.29.164:5000";
 
   // AUTH //
   static const String LoginInitiate = "/api/v1/worker/auth/login/initiate";
@@ -68,5 +68,8 @@ class ApiUrl {
 
   // ORDER CANCEL BY WORKER //
   static const String ordercancelbyworker = "/api/v1/worker/dashboard/orders/cancel";
+
+  // SEND FCM TOKEN //
+  static const String sendfcmtoken = "/api/v1/worker/notifications/fcm-token/register";
 
 }

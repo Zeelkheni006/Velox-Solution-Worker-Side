@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/api/Api_Service/Auth/auth_api.dart';
+import '../../../../core/api/Api_Service/Send_Fcm_Token/send_fcm_token.dart';
 import '../../../../core/api/api_endpoints.dart';
 import '../../../../core/constants/theme_controller.dart';
 import '../../../../core/utils/app_storage.dart';
@@ -159,7 +161,7 @@ class LoginController extends GetxController {
         },
       );
 
-      print("LOGIN THROUGH PASSWORD ::: $response");
+      logPrint("LOGIN THROUGH PASSWORD ::: $response");
 
       FullScreenLoader.hide();
 
@@ -172,6 +174,8 @@ class LoginController extends GetxController {
           workerId: int.tryParse(data['worker_id']?.toString() ?? '0') ?? 0,
         );
 
+        await SendFcmToken.sendFcmToken();
+
         CustomSnackbar.showSuccess("Success", "Login successful");
         Get.offAllNamed(Routes.DASHBOARD);
         return;
@@ -180,8 +184,8 @@ class LoginController extends GetxController {
       _handleLoginError(response);
     } catch (e, stack) {
       FullScreenLoader.hide();
-      debugPrint("LOGIN ERROR ::: $e");
-      debugPrint("STACK TRACE ::: $stack");
+      logPrint("LOGIN ERROR ::: $e");
+      logPrint("STACK TRACE ::: $stack");
       CustomSnackbar.showError("Error", "Something went wrong");
     }
   }
@@ -215,7 +219,7 @@ class LoginController extends GetxController {
         },
       );
 
-      print("LOGIN WITH OTP ::: $response");
+      logPrint("LOGIN WITH OTP ::: $response");
 
       FullScreenLoader.hide();
 
@@ -239,8 +243,8 @@ class LoginController extends GetxController {
       // ✅ Hide Loader (IMPORTANT in catch)
       FullScreenLoader.hide();
 
-      debugPrint("LOGIN WITH OTP ERROR ::: $e");
-      debugPrint("STACK TRACE ::: $stack");
+      logPrint("LOGIN WITH OTP ERROR ::: $e");
+      logPrint("STACK TRACE ::: $stack");
 
       CustomSnackbar.showError(
         "Oops!",

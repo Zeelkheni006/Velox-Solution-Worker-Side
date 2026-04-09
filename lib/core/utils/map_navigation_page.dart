@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/app_text_styles.dart';
 import '../../../../core/utils/app_responsive.dart';
+import '../App_Safety/app_safety.dart';
 
 // ── Location State Enum ───────────────────────────────────────────────────────
 //
@@ -313,7 +314,7 @@ class _NavigationPageState extends State<NavigationPage>
       _fitAllRoutes();
 
     } catch (e) {
-      debugPrint('Route fetch error: $e');
+      logPrint('Route fetch error: $e');
       _buildFallbackRoute(fromLat, fromLng);
     }
   }

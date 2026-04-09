@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../../../core/App_Safety/app_safety.dart';
 import '../../../../core/utils/app_storage.dart';
 
 class DashboardController extends GetxController with GetSingleTickerProviderStateMixin {
@@ -25,7 +26,7 @@ class DashboardController extends GetxController with GetSingleTickerProviderSta
       selectedIndex.value = tabController.index;
     });
     String? token = await AppStorage.getWorkerAccessToken();
-    print("WORKER TOKEN ::: $token");
+    logPrint("WORKER TOKEN ::: $token");
   }
 
   void goOnline() {
