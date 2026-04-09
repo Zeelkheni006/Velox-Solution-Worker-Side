@@ -53,6 +53,7 @@ class OrderDetailsController extends GetxController {
 
   bool _otpSheetScheduled = false;
 
+  bool get isServiceCompleted => order.value?.orderStatus == 'service_completed';
   @override
   void onInit() {
     super.onInit();
@@ -321,6 +322,14 @@ class OrderDetailsController extends GetxController {
   }
 
   Future<void> closeOrder() async {
+    if (isPaymentUnpaid) {
+      CustomSnackbar.showError(
+        "Payment Pending",
+        "Cannot close order until payment is completed.",
+      );
+      return;
+    }
+
     FullScreenLoader.show(message: "Closing order...");
 
     try {

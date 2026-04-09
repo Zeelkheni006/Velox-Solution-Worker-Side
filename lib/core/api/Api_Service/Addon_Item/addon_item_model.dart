@@ -102,7 +102,7 @@ class AddonController extends GetxController {
   var addonTotal = 0.0.obs;
 
   // ── Action state ──────────────────────────────────────────────────────────
-  var isAdding = false.obs;
+  var addingPartId = RxnInt();
   var removingId = RxnInt();
 
   final RxBool isAddonExpanded = false.obs;
@@ -201,7 +201,7 @@ class AddonController extends GetxController {
 
   Future<void> addPart(AddonPartModel part) async {
     try {
-      isAdding(true);
+      addingPartId.value = part.id;
       final res = await AddonItem.addOnAdd(
         orderId: orderId,
         addonItemIds: [part.id],
@@ -233,7 +233,7 @@ class AddonController extends GetxController {
     } catch (_) {
       CustomSnackbar.showError("Error", "Something went wrong");
     } finally {
-      isAdding(false);
+      addingPartId.value = null;
     }
   }
 
@@ -242,6 +242,7 @@ class AddonController extends GetxController {
   Future<void> removePart(OrderAddonModel addon) async {
     try {
       removingId.value = addon.id;
+
       final res = await AddonItem.addOnRemove(
         orderId: orderId,
         orderAddonItemId: addon.id,
@@ -249,16 +250,42 @@ class AddonController extends GetxController {
 
       if (res['success'] == true) {
         final msg = res['message'];
-        await fetchOrderAddons();
+
+        final index = orderAddons.indexWhere((e) => e.id == addon.id);
+
+        if (index != -1) {
+          final current = orderAddons[index];
+
+          if (current.quantity > 1) {
+            /// ✅ ONLY DECREASE QUANTITY
+            orderAddons[index] = OrderAddonModel(
+              id: current.id,
+              addonItemId: current.addonItemId,
+              partName: current.partName,
+              quantity: current.quantity - 1,
+              unitPrice: current.unitPrice,
+              totalPrice: current.unitPrice * (current.quantity - 1),
+            );
+          } else {
+            /// ✅ REMOVE ONLY IF 1
+            orderAddons.removeAt(index);
+          }
+        }
+
+        /// ✅ UPDATE TOTAL
+        addonTotal.value =
+            (msg['addon_total'] as num?)?.toDouble() ?? addonTotal.value;
+
         CustomSnackbar.showSuccess(
-          "Removed",
-          "${addon.partName} quantity updated",
+          "Updated",
+          "${addon.partName} updated",
         );
+
         _syncOrderTotal(msg);
       } else {
         CustomSnackbar.showError(
           "Error",
-          res['message']?.toString() ?? "Failed to remove part",
+          res['message']?.toString() ?? "Failed",
         );
       }
     } catch (_) {

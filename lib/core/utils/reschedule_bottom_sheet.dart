@@ -86,19 +86,20 @@ class RescheduleBottomSheet {
       }) {
     if (Get.isBottomSheetOpen == true) return;
 
+    // Safely extract userId from the loaded order; fall back to 0 if not ready.
+    final int userId = controller.order.value?.userId ?? 0;
+
     showModalBottomSheet(
       context: context,
-      // isScrollControlled=true lets the sheet grow above 50% and also
-      // means Flutter passes the correct viewInsets to the builder.
       isScrollControlled: true,
       isDismissible: true,
-      // enableDrag=false: we handle scroll ourselves; letting the sheet
-      // drag would fight the inner scroll and cause more _StretchController
-      // assertion errors.
       enableDrag: false,
       backgroundColor: Colors.transparent,
       barrierColor: Colors.black54,
-      builder: (_) => _RescheduleSheet(controller: controller),
+      builder: (_) => _RescheduleSheet(
+        controller: controller,
+        userId: userId,
+      ),
     );
   }
 }
@@ -109,7 +110,8 @@ class RescheduleBottomSheet {
 
 class _RescheduleSheet extends StatefulWidget {
   final OrderDetailsController controller;
-  const _RescheduleSheet({required this.controller});
+  final int userId;
+  const _RescheduleSheet({required this.controller, required this.userId});
 
   @override
   State<_RescheduleSheet> createState() => _RescheduleSheetState();
@@ -127,21 +129,17 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
   final TextEditingController _noteCtrl = TextEditingController();
   final FocusNode _noteFocus = FocusNode();
 
-  // Single ScrollController owned entirely by our SingleChildScrollView.
-  // No DraggableScrollableSheet = no nested-scroll conflict.
   final ScrollController _scrollCtrl = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _fetchSlots();
-
     _noteFocus.addListener(_onNoteFocusChange);
   }
 
   void _onNoteFocusChange() {
     if (!_noteFocus.hasFocus) return;
-    // Give the keyboard time to finish animating in, then scroll to bottom.
     Future.delayed(const Duration(milliseconds: 400), () {
       if (!mounted) return;
       if (_scrollCtrl.hasClients) {
@@ -172,10 +170,12 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
       _error = null;
     });
     try {
-      final res =
-      await RescheduleSlots.rescheduleslot(widget.controller.orderId);
+      final res = await RescheduleSlots.rescheduleslot(
+        orderId: widget.controller.orderId,
+        userId: widget.userId,
+      );
       if (res['success'] == true) {
-        final rawDays = (res['message']?['days'] as List?) ?? [];
+        final rawDays = (res['data']?['days'] as List?) ?? [];
         setState(() {
           _days = rawDays.map((d) {
             final rawSlots = (d['available_slots'] as List?) ?? [];
@@ -189,6 +189,10 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                   .toList(),
             );
           }).toList();
+
+          // Auto-select first day that has slots
+          final firstWithSlots = _days.indexWhere((d) => d.slots.isNotEmpty);
+          _selectedDayIndex = firstWithSlots >= 0 ? firstWithSlots : 0;
         });
       } else {
         setState(() {
@@ -216,8 +220,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     if (note.isEmpty) {
       CustomSnackbar.showError(
           'Reason Required', 'Please enter a reason for rescheduling.');
-      // Re-focus and scroll after a tick so the keyboard animation
-      // doesn't collide with the snackbar animation.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         FocusScope.of(context).requestFocus(_noteFocus);
@@ -244,7 +246,14 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
         if (Navigator.canPop(context)) Navigator.of(context).pop();
         await Future.delayed(const Duration(milliseconds: 250));
         if (Get.context != null) {
-          _showSuccessDialog(Get.context!, res['message'] as Map);
+          // res['data'] is Map<String, dynamic> after jsonDecode.
+          // Use Map.from() — never a direct cast — to stay type-safe.
+          final Map<String, dynamic> data = (res['data'] is Map)
+              ? Map<String, dynamic>.from(res['data'] as Map)
+              : <String, dynamic>{};
+          data['message'] = res['message']?.toString() ??
+              'Order rescheduled successfully';
+          _showSuccessDialog(Get.context!, data);
         }
       } else {
         final msg = res['message'];
@@ -269,19 +278,23 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
 
   // ── Success dialog ────────────────────────────────────────────────────────
 
-  void _showSuccessDialog(BuildContext ctx, Map message) {
+  void _showSuccessDialog(BuildContext ctx, Map<String, dynamic> message) {
     String _fmtTime(String? t) {
-      if (t == null) return '';
-      final parts = t.split(':');
-      final h = int.parse(parts[0]);
-      final m = parts[1];
-      final suffix = h < 12 ? 'AM' : 'PM';
-      final h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h);
-      return '$h12:$m $suffix';
+      if (t == null || t.isEmpty) return '';
+      try {
+        final parts = t.split(':');
+        final h = int.parse(parts[0]);
+        final m = parts[1];
+        final suffix = h < 12 ? 'AM' : 'PM';
+        final h12 = h == 0 ? 12 : (h > 12 ? h - 12 : h);
+        return '$h12:$m $suffix';
+      } catch (_) {
+        return t;
+      }
     }
 
     String _fmtDate(String? d) {
-      if (d == null) return '';
+      if (d == null || d.isEmpty) return '';
       try {
         final dt = DateTime.parse(d);
         const months = [
@@ -295,16 +308,27 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
       }
     }
 
+    // Safe extraction — no hard casts, everything via toString() / num cast
     final String msg =
         message['message']?.toString() ?? 'Order rescheduled successfully';
-    final int newOrderId = message['new_order_id'] ?? 0;
-    final String newStatus = message['new_order_status']?.toString() ?? '';
-    final Map? newSlot =
-    message['reschedule_request']?['new_slot'] as Map?;
+    final int newOrderId =
+        (message['new_order_id'] as num?)?.toInt() ?? 0;
+    final String newStatus =
+        message['new_order_status']?.toString() ?? '';
+
+    // reschedule_request is Map<String, dynamic> after jsonDecode
+    final Map<String, dynamic>? rescheduleRequest =
+    (message['reschedule_request'] is Map)
+        ? Map<String, dynamic>.from(message['reschedule_request'] as Map)
+        : null;
+    final Map<String, dynamic>? newSlot =
+    (rescheduleRequest?['new_slot'] is Map)
+        ? Map<String, dynamic>.from(rescheduleRequest!['new_slot'] as Map)
+        : null;
 
     showDialog(
       context: ctx,
-      barrierDismissible: false, // Prevents closing by tapping outside
+      barrierDismissible: false,
       barrierColor: Colors.black.withOpacity(0.6),
       builder: (dialogCtx) => _SuccessDialogContent(
         message: msg,
@@ -324,27 +348,21 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     );
   }
 
+
+
   // ─────────────────────────────────────────────────────────────────────────
   // Build
   // ─────────────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
-    // viewInsets.bottom = keyboard height.
-    // We use Padding (not AnimatedPadding) here because the framework
-    // already animates viewInsets changes and double-animating causes jank.
     final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     final screenHeight = MediaQuery.of(context).size.height;
-
-    // Sheet occupies at most 88% of the screen height, minus keyboard.
-    // This gives natural feel: keyboard pushes the sheet content up
-    // so the note field is always visible.
     final maxSheetHeight = screenHeight * 0.88 - keyboardHeight;
 
     return Padding(
       padding: EdgeInsets.only(bottom: keyboardHeight),
       child: GestureDetector(
-        // Tapping outside the note field dismisses keyboard
         onTap: () => FocusScope.of(context).unfocus(),
         behavior: HitTestBehavior.translucent,
         child: Align(
@@ -382,8 +400,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                   const Divider(height: 1),
 
                   // ── Scrollable body ─────────────────────────────────
-                  // Flexible so Column doesn't overflow; the scroll view
-                  // fills whatever space is left between header and CTA.
                   Flexible(
                     child: _isLoading
                         ? _buildShimmer(context)
@@ -393,8 +409,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                   ),
 
                   // ── Bottom CTA ──────────────────────────────────────
-                  if (!_isLoading && _error == null)
-                    _buildBottomBar(context),
+                  if (!_isLoading && _error == null) _buildBottomBar(context),
                 ],
               ),
             ),
@@ -454,8 +469,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
 
   Widget _buildShimmer(BuildContext context) {
     return SingleChildScrollView(
-      // NeverScrollableScrollPhysics so the shimmer doesn't itself scroll
-      // and never creates a _StretchController interaction.
       physics: const NeverScrollableScrollPhysics(),
       padding: EdgeInsets.all(rs(context, 16)),
       child: Column(
@@ -463,7 +476,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
         children: [
           _shimmer(context, width: rs(context, 110), height: rs(context, 16)),
           SizedBox(height: rs(context, 12)),
-          // Day chips row
           SizedBox(
             height: rs(context, 72),
             child: ListView.separated(
@@ -480,7 +492,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           SizedBox(height: rs(context, 22)),
           _shimmer(context, width: rs(context, 130), height: rs(context, 16)),
           SizedBox(height: rs(context, 12)),
-          // Slot grid
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -539,8 +550,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
               onTap: _fetchSlots,
               child: CustomContainer(
                 padding: EdgeInsets.symmetric(
-                    horizontal: rs(context, 24),
-                    vertical: rs(context, 12)),
+                    horizontal: rs(context, 24), vertical: rs(context, 12)),
                 backgroundColor: AppColors.primary,
                 borderRadius: AppRadii.button(context),
                 child: Text('Retry',
@@ -559,9 +569,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
   Widget _buildScrollBody(BuildContext context) {
     return SingleChildScrollView(
       controller: _scrollCtrl,
-      // ClampingScrollPhysics = no overscroll stretch on Android.
-      // This is the KEY fix: BouncingScrollPhysics / default physics on
-      // Android create the _StretchController that caused the assertion.
       physics: const ClampingScrollPhysics(),
       keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
       padding: EdgeInsets.fromLTRB(
@@ -579,7 +586,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           SizedBox(height: rs(context, 10)),
           _buildSlotGrid(context),
           SizedBox(height: rs(context, 20)),
-          // Note — required
           Row(children: [
             Icon(Icons.notes_rounded,
                 size: rs(context, 16), color: AppColors.primary),
@@ -605,7 +611,6 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           ]),
           SizedBox(height: rs(context, 10)),
           _buildNoteField(context),
-          // Extra bottom padding so content isn't hidden behind the CTA bar
           SizedBox(height: rs(context, 20)),
         ],
       ),
@@ -629,19 +634,21 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
       height: rs(context, 72),
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
-        // ClampingScrollPhysics here too — keeps all horizontal lists
-        // free of _StretchController.
         physics: const ClampingScrollPhysics(),
         itemCount: _days.length,
         separatorBuilder: (_, __) => SizedBox(width: rs(context, 8)),
         itemBuilder: (_, i) {
           final day = _days[i];
           final sel = _selectedDayIndex == i;
+          final hasSlots = day.slots.isNotEmpty;
+
           return GestureDetector(
-            onTap: () => setState(() {
+            onTap: hasSlots
+                ? () => setState(() {
               _selectedDayIndex = i;
               _selectedSlotIndex = null;
-            }),
+            })
+                : null,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 180),
               curve: Curves.easeOut,
@@ -649,12 +656,16 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
               decoration: BoxDecoration(
                 color: sel
                     ? AppColors.primary
-                    : AppColors.textSecondary.withOpacity(0.07),
+                    : hasSlots
+                    ? AppColors.textSecondary.withOpacity(0.07)
+                    : AppColors.textSecondary.withOpacity(0.03),
                 borderRadius: BorderRadius.circular(rs(context, 14)),
                 border: Border.all(
                   color: sel
                       ? AppColors.primary
-                      : AppColors.textSecondary.withOpacity(0.18),
+                      : hasSlots
+                      ? AppColors.textSecondary.withOpacity(0.18)
+                      : AppColors.textSecondary.withOpacity(0.1),
                   width: sel ? 2 : 1,
                 ),
               ),
@@ -677,7 +688,9 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                       fontWeight: FontWeight.w600,
                       color: sel
                           ? AppColors.white.withOpacity(0.85)
-                          : AppColors.textSecondary,
+                          : hasSlots
+                          ? AppColors.textSecondary
+                          : AppColors.textSecondary.withOpacity(0.4),
                       fontSize: rs(context, 11),
                     ),
                   ),
@@ -685,10 +698,23 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                     day.displayDate.split(', ').last,
                     style: AppTextStyles.bodySmall(context).copyWith(
                       fontWeight: FontWeight.w700,
-                      color: sel ? AppColors.white : AppColors.textPrimary,
+                      color: sel
+                          ? AppColors.white
+                          : hasSlots
+                          ? AppColors.textPrimary
+                          : AppColors.textSecondary.withOpacity(0.4),
                       fontSize: rs(context, 12),
                     ),
                   ),
+                  if (!hasSlots && !sel)
+                    Text(
+                      'Full',
+                      style: AppTextStyles.bodySmall(context).copyWith(
+                        fontSize: rs(context, 9),
+                        color: AppColors.error.withOpacity(0.5),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                 ],
               ),
             ),
@@ -790,8 +816,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
           textInputAction: TextInputAction.done,
           onSubmitted: (_) => FocusScope.of(context).unfocus(),
           decoration: InputDecoration(
-            hintText:
-            'e.g. "User not available at the scheduled time"',
+            hintText: 'e.g. "User not available at the scheduled time"',
             hintStyle: AppTextStyles.bodySmall(context).copyWith(
                 color: AppColors.textSecondary.withOpacity(0.45)),
             filled: true,
@@ -802,8 +827,8 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
                 .copyWith(color: AppColors.textSecondary.withOpacity(0.5)),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(rs(context, 14)),
-              borderSide: BorderSide(
-                  color: AppColors.textSecondary.withOpacity(0.18)),
+              borderSide:
+              BorderSide(color: AppColors.textSecondary.withOpacity(0.18)),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(rs(context, 14)),
@@ -859,8 +884,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
             onTap: _confirmReschedule,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding:
-              EdgeInsets.symmetric(vertical: rs(context, 16)),
+              padding: EdgeInsets.symmetric(vertical: rs(context, 16)),
               decoration: BoxDecoration(
                 color: canConfirm
                     ? AppColors.warning.withOpacity(0.9)
@@ -964,8 +988,6 @@ class _ShimmerBoxState extends State<_ShimmerBox>
 // Success dialog content
 // ─────────────────────────────────────────────────────────────────────────────
 
-// _SuccessDialogContent - Modified version
-
 class _SuccessDialogContent extends StatelessWidget {
   final String message;
   final int newOrderId;
@@ -986,7 +1008,7 @@ class _SuccessDialogContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async => false, // Disable back button
+      onWillPop: () async => false,
       child: Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: const EdgeInsets.symmetric(horizontal: 24),
@@ -1019,20 +1041,30 @@ class _SuccessDialogContent extends StatelessWidget {
                 padding: EdgeInsets.all(rs(context, 16)),
                 backgroundColor: AppColors.success.withOpacity(0.06),
                 borderRadius: BorderRadius.circular(rs(context, 16)),
-                border: Border.all(color: AppColors.success.withOpacity(0.2)),
+                border:
+                Border.all(color: AppColors.success.withOpacity(0.2)),
                 child: Column(children: [
                   if (dateLabel.isNotEmpty)
-                    _row(context, Icons.calendar_today_rounded, 'New Date', dateLabel),
+                    _row(context, Icons.calendar_today_rounded, 'New Date',
+                        dateLabel),
                   if (dateLabel.isNotEmpty && timeLabel.isNotEmpty)
-                    Divider(height: rs(context, 16), color: AppColors.success.withOpacity(0.15)),
+                    Divider(
+                        height: rs(context, 16),
+                        color: AppColors.success.withOpacity(0.15)),
                   if (timeLabel.isNotEmpty)
-                    _row(context, Icons.schedule_rounded, 'New Slot', timeLabel),
+                    _row(context, Icons.schedule_rounded, 'New Slot',
+                        timeLabel),
                   if (newOrderId > 0) ...[
-                    Divider(height: rs(context, 16), color: AppColors.success.withOpacity(0.15)),
-                    _row(context, Icons.tag_rounded, 'New Order ID', '#$newOrderId'),
+                    Divider(
+                        height: rs(context, 16),
+                        color: AppColors.success.withOpacity(0.15)),
+                    _row(context, Icons.tag_rounded, 'New Order ID',
+                        '#$newOrderId'),
                   ],
                   if (newStatus.isNotEmpty) ...[
-                    Divider(height: rs(context, 16), color: AppColors.success.withOpacity(0.15)),
+                    Divider(
+                        height: rs(context, 16),
+                        color: AppColors.success.withOpacity(0.15)),
                     _row(context, Icons.info_outline_rounded, 'Status',
                         newStatus[0].toUpperCase() + newStatus.substring(1)),
                   ],
@@ -1043,7 +1075,8 @@ class _SuccessDialogContent extends StatelessWidget {
                 onTap: onDone,
                 child: CustomContainer(
                   width: double.infinity,
-                  padding: EdgeInsets.symmetric(vertical: rs(context, 15)),
+                  padding:
+                  EdgeInsets.symmetric(vertical: rs(context, 15)),
                   backgroundColor: AppColors.primary,
                   borderRadius: AppRadii.button(context),
                   child: Row(
