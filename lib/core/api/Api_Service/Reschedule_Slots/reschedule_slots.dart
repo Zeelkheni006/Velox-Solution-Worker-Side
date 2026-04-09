@@ -5,11 +5,17 @@ import '../Worker_Refresh_Token/worker_api_service.dart';
 class RescheduleSlots {
 
   // ==================== GET AVAILABLE SLOTS ====================
-  static Future<Map<String, dynamic>> rescheduleslot(int orderId) async {
+  static Future<Map<String, dynamic>> rescheduleslot({
+    required int orderId,
+    required int userId,
+  }) async {
     try {
       final response = await WorkerApiService.get(
         url: ApiUrl.rescheduleAvailableSlots,
-        queryParams: {'order_id': orderId.toString()},
+        queryParams: {
+          'order_id': orderId.toString(),
+          'user_id': userId.toString(),
+        },
       );
 
       return jsonDecode(response.body);

@@ -1,3 +1,4 @@
+import 'package:apilearning/core/api/Api_Service/Today_Order/today-upcoming-old_order_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
@@ -133,32 +134,68 @@ class OrderDetailsPage extends StatelessWidget {
                           padding: EdgeInsets.all(rs(context, 16)),
                           backgroundColor: AppColors.primary,
                           borderRadius: BorderRadius.only(
-                            bottomLeft:
-                            Radius.circular(rs(context, 24)),
-                            bottomRight:
-                            Radius.circular(rs(context, 24)),
+                            bottomLeft: Radius.circular(rs(context, 24)),
+                            bottomRight: Radius.circular(rs(context, 24)),
                           ),
-                          child: Row(
+                          child: Column(
                             children: [
-                              Expanded(
-                                child: _infoCard(
-                                  context,
-                                  icon: Icons.schedule_rounded,
-                                  label: "Time Slot",
-                                  value: order.slotTime
-                                      .split(' - ')
-                                      .first
-                                      .trim(),
+
+                              Center(
+                                child: CustomContainer(
+                                  padding: EdgeInsets.all(rs(context, 12)),
+                                  backgroundColor: AppColors.white.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(rs(context, 14)),
+                                  border: Border.all(color: AppColors.white.withOpacity(0.3)),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        "Booking ID",
+                                        style: AppTextStyles.bodySmall(context).copyWith(
+                                          color: AppColors.white.withOpacity(0.9),
+                                          fontSize: rs(context, 11),
+                                        ),
+                                      ),
+                                      SizedBox(height: rs(context, 4)),
+                                      Text(
+                                        order.bookingCode,
+                                        style: AppTextStyles.bodyMedium(context).copyWith(
+                                          color: AppColors.white,
+                                          fontWeight: FontWeight.bold,
+                                          letterSpacing: 0.8,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                              SizedBox(width: rs(context, 10)),
-                              Expanded(
-                                child: _infoCard(
-                                  context,
-                                  icon: Icons.calendar_month_rounded,
-                                  label: "Service Date",
-                                  value: order.serviceDate,
-                                ),
+
+                              SizedBox(height: rs(context, 14)),
+
+                              // Existing Row
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: _infoCard(
+                                      context,
+                                      icon: Icons.schedule_rounded,
+                                      label: "Time Slot",
+                                      value: order.slotTime
+                                          .split(' - ')
+                                          .first
+                                          .trim(),
+                                    ),
+                                  ),
+                                  SizedBox(width: rs(context, 10)),
+                                  Expanded(
+                                    child: _infoCard(
+                                      context,
+                                      icon: Icons.calendar_month_rounded,
+                                      label: "Service Date",
+                                      value: order.serviceDate,
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
@@ -194,15 +231,25 @@ class OrderDetailsPage extends StatelessWidget {
                                 child: _locationCard(context, addressText,
                                     canNavigate, address),
                               ),
+                                SizedBox(height: rs(context, 20)),
+                                _section(
+                                  context,
+                                  title: "Services",
+                                  icon: Icons.home_repair_service_rounded,
+                                  child: _serviceDetailsCard(context, order),
+                                ),
+                                SizedBox(height: rs(context, 20)),
 
                               // ── Addon Module ─────────────────────────
                               Obx(() {
                                 if (!controller.isOtpVerified.value) {
                                   return const SizedBox.shrink();
                                 }
-                                if (controller.orderIsFinal.value) {
+
+                                if (controller.orderIsFinal.value || controller.isServiceCompleted) {
                                   return const SizedBox.shrink();
                                 }
+
                                 return Column(
                                   children: [
                                     SizedBox(height: rs(context, 20)),
@@ -1299,7 +1346,7 @@ class OrderDetailsPage extends StatelessWidget {
             ),
             const Spacer(),
             Obx(() {
-              final isAdding = addonCtrl.isAdding.value;
+              final isAdding = addonCtrl.addingPartId.value == part.id;
 
               return GestureDetector(
                 onTap: isAdding ? null : () => addonCtrl.addPart(part),
@@ -1312,9 +1359,15 @@ class OrderDetailsPage extends StatelessWidget {
                     child: SizedBox(
                       width: rs(context, 16),
                       height: rs(context, 16),
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: AppColors.textWhite,
+                      child: Shimmer.fromColors(
+                        baseColor: AppColors.white.withOpacity(0.3),
+                        highlightColor: AppColors.white.withOpacity(0.7),
+                        child: CustomContainer(
+                          height: rs(context, 14),
+                          width: rs(context, 60),
+                          backgroundColor: AppColors.white,
+                          borderRadius: BorderRadius.all(AppRadii.md(context)),
+                        ),
                       ),
                     ),
                   )
@@ -1386,169 +1439,87 @@ class OrderDetailsPage extends StatelessWidget {
         height: rs(context, 180), fit: BoxFit.cover);
   }
 
-  Widget _orderAddonsList(
-      BuildContext context, AddonController addonCtrl) {
+  Widget _orderAddonsList(BuildContext context, AddonController addonCtrl) {
     return CustomContainer(
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
       border: Border.all(color: AppColors.primary.withOpacity(0.08)),
-      child: Obx(() {
-        return Column(
-          children: [
-            Padding(
-              padding: EdgeInsets.fromLTRB(
-                rs(context, 14),
-                rs(context, 10),
-                rs(context, 14),
-                rs(context, 6),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    "Added Parts",
-                    style: AppTextStyles.bodySmall(context).copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    "${addonCtrl.orderAddons.length} item${addonCtrl.orderAddons.length == 1 ? '' : 's'}",
-                    style: AppTextStyles.bodySmall(context)
-                        .copyWith(color: AppColors.textSecondary),
-                  ),
-                ],
-              ),
+      child: Column(
+        children: [
+          /// ── Header ─────────────────────────────
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              rs(context, 14),
+              rs(context, 10),
+              rs(context, 14),
+              rs(context, 6),
             ),
-            Divider(
-                height: 1,
-                color: AppColors.textSecondary.withOpacity(0.08)),
-            ...addonCtrl.orderAddons.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final addon = entry.value;
-              final isLast =
-                  idx == addonCtrl.orderAddons.length - 1;
-              final isRemoving =
-                  addonCtrl.removingId.value == addon.id;
+            child: Row(
+              children: [
+                Text(
+                  "Added Parts",
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
 
-              return Column(
-                children: [
-                  Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: rs(context, 14),
-                      vertical: rs(context, 12),
-                    ),
-                    child: Row(
-                      children: [
-                        CustomContainer(
-                          padding: EdgeInsets.all(rs(context, 8)),
-                          backgroundColor:
-                          AppColors.primary.withOpacity(0.08),
-                          borderRadius:
-                          BorderRadius.circular(rs(context, 10)),
-                          child: Text(
-                            "×${addon.quantity}",
-                            style: AppTextStyles.bodySmall(context)
-                                .copyWith(
-                              color: AppColors.primary,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        SizedBox(width: rs(context, 10)),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                addon.partName,
-                                style:
-                                AppTextStyles.bodyMedium(context)
-                                    .copyWith(
-                                    fontWeight: FontWeight.w600),
-                              ),
-                              Text(
-                                "₹${addon.unitPrice.toStringAsFixed(0)} × ${addon.quantity} = ₹${addon.totalPrice.toStringAsFixed(0)}",
-                                style:
-                                AppTextStyles.bodySmall(context)
-                                    .copyWith(
-                                    color:
-                                    AppColors.textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: isRemoving
-                              ? null
-                              : () => addonCtrl.removePart(addon),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: EdgeInsets.all(rs(context, 8)),
-                            decoration: BoxDecoration(
-                              color: AppColors.error.withOpacity(0.08),
-                              borderRadius: BorderRadius.circular(
-                                  rs(context, 10)),
-                              border: Border.all(
-                                  color:
-                                  AppColors.error.withOpacity(0.2)),
-                            ),
-                            child: isRemoving
-                                ? SizedBox(
-                              width: rs(context, 16),
-                              height: rs(context, 16),
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.error,
-                              ),
-                            )
-                                : Icon(
-                              Icons.remove_rounded,
-                              color: AppColors.error,
-                              size: rs(context, 18),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isLast)
-                    Divider(
-                        height: 1,
-                        color:
-                        AppColors.textSecondary.withOpacity(0.08)),
-                ],
-              );
-            }),
-            Divider(
-                height: 1,
-                color: AppColors.textSecondary.withOpacity(0.12)),
-            Padding(
-              padding: EdgeInsets.symmetric(
-                horizontal: rs(context, 14),
-                vertical: rs(context, 12),
-              ),
-              child: Row(
-                children: [
-                  Text(
-                    "Addon Total",
-                    style: AppTextStyles.bodyMedium(context)
-                        .copyWith(fontWeight: FontWeight.w600),
-                  ),
-                  const Spacer(),
-                  Text(
-                    "₹${addonCtrl.addonTotal.value.toStringAsFixed(0)}",
-                    style: AppTextStyles.bodyMedium(context).copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
+                /// 🔥 Only count update
+                Obx(() => Text(
+                  "${addonCtrl.orderAddons.length} item${addonCtrl.orderAddons.length == 1 ? '' : 's'}",
+                  style: AppTextStyles.bodySmall(context)
+                      .copyWith(color: AppColors.textSecondary),
+                )),
+              ],
             ),
-          ],
-        );
-      }),
+          ),
+
+          Divider(
+              height: 1,
+              color: AppColors.textSecondary.withOpacity(0.08)),
+
+          /// ── LIST ITEMS (IMPORTANT CHANGE) ─────────────────────────
+          Obx(() {
+            return Column(
+              children: addonCtrl.orderAddons.map((addon) {
+                return _addonItemTile(context, addonCtrl, addon);
+              }).toList(),
+            );
+          }),
+
+          Divider(
+              height: 1,
+              color: AppColors.textSecondary.withOpacity(0.12)),
+
+          /// ── TOTAL ─────────────────────────────
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: rs(context, 14),
+              vertical: rs(context, 12),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  "Addon Total",
+                  style: AppTextStyles.bodyMedium(context)
+                      .copyWith(fontWeight: FontWeight.w600),
+                ),
+                const Spacer(),
+
+                /// 🔥 Only total update
+                Obx(() => Text(
+                  "₹${addonCtrl.addonTotal.value.toStringAsFixed(0)}",
+                  style: AppTextStyles.bodyMedium(context).copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                )),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -2592,5 +2563,237 @@ class OrderDetailsPage extends StatelessWidget {
         child,
       ],
     );
+  }
+
+  Widget _serviceDetailsCard(BuildContext context, order) {
+    final List serviceDetails = order.serviceDetails;
+
+    if (serviceDetails.isEmpty) {
+      return CustomContainer(
+        width: double.infinity,
+        padding: EdgeInsets.all(rs(context, 14)),
+        backgroundColor: AppColors.white,
+        borderRadius: AppRadii.card(context),
+        border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+        child: Text(
+          'No service details available',
+          style: AppTextStyles.bodyMedium(context)
+              .copyWith(color: AppColors.textSecondary),
+        ),
+      );
+    }
+
+    return CustomContainer(
+      backgroundColor: AppColors.white,
+      borderRadius: AppRadii.card(context),
+      border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+      child: Column(
+        children: [
+          // Header row
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              rs(context, 14), rs(context, 10),
+              rs(context, 14), rs(context, 6),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'Service',
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  'Qty',
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, color: AppColors.textSecondary.withOpacity(0.08)),
+
+          // Service rows
+          ...serviceDetails.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final detail = entry.value; // ServiceDetailModel
+            final isLast = idx == serviceDetails.length - 1;
+
+            return Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: rs(context, 14),
+                    vertical: rs(context, 10),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Service name
+                      Expanded(
+                        child: Text(
+                          detail.serviceName,
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                      // Quantity badge
+                      CustomContainer(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: rs(context, 10),
+                          vertical: rs(context, 5),
+                        ),
+                        backgroundColor: AppColors.primary.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(rs(context, 20)),
+                        child: Text(
+                          '×${detail.quantity}',
+                          style: AppTextStyles.bodySmall(context).copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (!isLast)
+                  Divider(
+                    height: 1,
+                    color: AppColors.textSecondary.withOpacity(0.08),
+                  ),
+              ],
+            );
+          }).toList(),
+
+          // Total services footer
+          Divider(height: 1, color: AppColors.textSecondary.withOpacity(0.12)),
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: rs(context, 14),
+              vertical: rs(context, 10),
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'Total Services',
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${serviceDetails.length} service${serviceDetails.length == 1 ? '' : 's'}',
+                  style: AppTextStyles.bodySmall(context).copyWith(
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _addonItemTile(
+      BuildContext context,
+      AddonController addonCtrl,
+      OrderAddonModel addon,
+      ) {
+    return Obx(() {
+      final isRemoving = addonCtrl.removingId.value == addon.id;
+
+      return Column(
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: rs(context, 14),
+              vertical: rs(context, 12),
+            ),
+            child: Row(
+              children: [
+                /// Quantity
+                CustomContainer(
+                  padding: EdgeInsets.all(rs(context, 8)),
+                  backgroundColor: AppColors.primary.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(rs(context, 10)),
+                  child: Text(
+                    "×${addon.quantity}",
+                    style: AppTextStyles.bodySmall(context).copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+
+                SizedBox(width: rs(context, 10)),
+
+                /// Name + Price
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        addon.partName,
+                        style: AppTextStyles.bodyMedium(context)
+                            .copyWith(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        "₹${addon.unitPrice.toStringAsFixed(0)} × ${addon.quantity} = ₹${addon.totalPrice.toStringAsFixed(0)}",
+                        style: AppTextStyles.bodySmall(context).copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                /// Remove Button
+                GestureDetector(
+                  onTap:
+                  isRemoving ? null : () => addonCtrl.removePart(addon),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    padding: EdgeInsets.all(rs(context, 8)),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(rs(context, 10)),
+                      border: Border.all(
+                          color: AppColors.error.withOpacity(0.2)),
+                    ),
+                    child: isRemoving
+                        ? SizedBox(
+                      width: rs(context, 16),
+                      height: rs(context, 16),
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: AppColors.error,
+                      ),
+                    )
+                        : Icon(
+                      Icons.remove_rounded,
+                      color: AppColors.error,
+                      size: rs(context, 18),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          Divider(
+              height: 1,
+              color: AppColors.textSecondary.withOpacity(0.08)),
+        ],
+      );
+    });
   }
 }
