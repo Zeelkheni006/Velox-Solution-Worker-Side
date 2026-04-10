@@ -4,6 +4,7 @@ class AddressModel {
   final String? country;
   final String? floor;
   final String? formattedAddress;
+  final String? googleFormattedAddress;
   final String? houseNumber;
   final String? instructions;
   final String? landmark;
@@ -19,6 +20,7 @@ class AddressModel {
     this.country,
     this.floor,
     this.formattedAddress,
+    this.googleFormattedAddress,
     this.houseNumber,
     this.instructions,
     this.landmark,
@@ -36,6 +38,7 @@ class AddressModel {
       country: json['country'],
       floor: json['floor'],
       formattedAddress: json['formatted_address'],
+      googleFormattedAddress: json['google_formatted_address'],
       houseNumber: json['house_number'],
       instructions: json['instructions'],
       landmark: json['landmark'],
