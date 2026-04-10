@@ -16,6 +16,7 @@ abstract class Routes {
   static const LEAVEHISTORY = _Paths.LEAVEHISTORY;
   static const OTPVERIFYSCREEN = _Paths.OTPVERIFYSCREEN;
   static const FORGOTPASSWORD = _Paths.FORGOTPASSWORD;
+  static const PRIVACYPOLICY = _Paths.PRIVACYPOLICY;
 }
 
 abstract class _Paths {
@@ -33,4 +34,5 @@ abstract class _Paths {
   static const LEAVEHISTORY = '/leavehistory';
   static const OTPVERIFYSCREEN = '/otpverifyscreen';
   static const FORGOTPASSWORD = '/forgotpassword';
+  static const PRIVACYPOLICY = '/privacypolicy';
 }
