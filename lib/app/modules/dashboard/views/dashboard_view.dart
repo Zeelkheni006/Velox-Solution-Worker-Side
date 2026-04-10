@@ -46,13 +46,13 @@ class _DashboardViewState extends State<DashboardView>
 
       return WillPopScope(
         onWillPop: () async {
-          // Jō current tab 0 nathi, to tab 0 par jāo
+
           if (controller.tabController.index != 0) {
             controller.tabController.animateTo(0);
             controller.selectedIndex.value = 0;
             return false;
           }
-          // Tab 0 par chīe to exit handler use karo
+
           return ExitHandler.onWillExit(context);
         },
         child: Scaffold(

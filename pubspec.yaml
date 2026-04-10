@@ -49,8 +49,6 @@ flutter:
 
   assets:
     - assets/images/
-    - assets/icons/
-    - assets/svgs/
 
   # To add custom fonts to your application (uncomment and replace paths as needed)
   # fonts:
