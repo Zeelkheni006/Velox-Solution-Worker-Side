@@ -14,6 +14,8 @@ import '../modules/otpverifyscreen/bindings/otpverifyscreen_binding.dart';
 import '../modules/otpverifyscreen/views/otpverifyscreen_view.dart';
 import '../modules/passwordchange/bindings/passwordchange_binding.dart';
 import '../modules/passwordchange/views/passwordchange_view.dart';
+import '../modules/privacypolicy/bindings/privacypolicy_binding.dart';
+import '../modules/privacypolicy/views/privacypolicy_view.dart';
 import '../modules/profile/bindings/profile_binding.dart';
 import '../modules/profile/views/profile_view.dart';
 import '../modules/splash/bindings/splash_binding.dart';
@@ -92,6 +94,11 @@ class AppPages {
       name: _Paths.FORGOTPASSWORD,
       page: () => const ForgotpasswordView(),
       binding: ForgotpasswordBinding(),
+    ),
+    GetPage(
+      name: _Paths.PRIVACYPOLICY,
+      page: () => const PrivacypolicyView(),
+      binding: PrivacypolicyBinding(),
     ),
   ];
 }

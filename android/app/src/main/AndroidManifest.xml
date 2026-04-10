@@ -12,7 +12,7 @@
     <uses-permission android:name="android.permission.CAMERA"/>
 
     <application
-        android:label="VELOX WORKER"
+        android:label="VELOX EXPERT"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
@@ -54,6 +54,11 @@
             <action android:name="android.intent.action.DIAL" />
             <data android:scheme="tel"/>
         </intent>
+    </queries>
+
+    <queries>
+        <package android:name="com.whatsapp" />
+        <package android:name="com.whatsapp.w4b" />
     </queries>
 
     <!-- ✅ Queries for text processing -->

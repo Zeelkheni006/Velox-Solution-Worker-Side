@@ -361,10 +361,12 @@ class ProfileView extends GetView<ProfileController> {
           _buildDivider(context),
           _buildSettingsTile(
             context: context,
-            icon: Icons.notifications_outlined,
-            title: 'Notifications',
-            subtitle: 'Manage notification settings',
-            onTap: () => CustomSnackbar.showInfo('Info', 'Coming Soon'),
+            icon: Icons.privacy_tip_outlined,
+            title: 'Privacy Policy',
+            subtitle: 'Read our privacy policy',
+            onTap: () {
+              Get.toNamed(Routes.PRIVACYPOLICY);
+            },
           ),
           // _buildDivider(context),
           // _buildSettingsTile(
