@@ -2442,37 +2442,188 @@ class OrderDetailsPage extends StatelessWidget {
     );
   }
 
+  // Widget _locationCard(BuildContext context, String addressText,
+  //     bool canNavigate, address) {
+  //   return CustomContainer(
+  //     backgroundColor: AppColors.white,
+  //     borderRadius: AppRadii.card(context),
+  //     border: Border.all(color: AppColors.primary.withOpacity(0.08)),
+  //     child: Column(
+  //       children: [
+  //         Padding(
+  //           padding: EdgeInsets.all(rs(context, 14)),
+  //           child: Row(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               _iconChip(context, icon: Icons.location_on_rounded),
+  //               SizedBox(width: rs(context, 12)),
+  //               Expanded(
+  //                 child: Text(
+  //                   addressText,
+  //                   style:
+  //                   AppTextStyles.bodyMedium(context).copyWith(
+  //                     fontWeight: FontWeight.w600,
+  //                     color: canNavigate
+  //                         ? AppColors.textPrimary
+  //                         : AppColors.textSecondary,
+  //                   ),
+  //                 ),
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //         const Divider(height: 1),
+  //         Padding(
+  //           padding: EdgeInsets.all(rs(context, 14)),
+  //           child: InkWell(
+  //             onTap: canNavigate
+  //                 ? () {
+  //               Get.to(
+  //                     () => NavigationPage(
+  //                   destinationLat: address.latitude!,
+  //                   destinationLng: address.longitude!,
+  //                   destinationName: address.formattedAddress ??
+  //                       "Customer Location",
+  //                 ),
+  //                 transition: Transition.downToUp,
+  //                 duration: const Duration(milliseconds: 400),
+  //               );
+  //             }
+  //                 : null,
+  //             borderRadius: AppRadii.button(context),
+  //             child: Opacity(
+  //               opacity: canNavigate ? 1 : 0.5,
+  //               child: _actionButton(
+  //                 context,
+  //                 Icons.navigation,
+  //                 canNavigate
+  //                     ? "Start Navigation"
+  //                     : "Address available later",
+  //               ),
+  //             ),
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
   Widget _locationCard(BuildContext context, String addressText,
       bool canNavigate, address) {
+    final String? googleAddress = address?.googleFormattedAddress;
+    final bool hasGoogleAddress =
+        googleAddress != null && googleAddress.isNotEmpty;
+
     return CustomContainer(
       backgroundColor: AppColors.white,
       borderRadius: AppRadii.card(context),
       border: Border.all(color: AppColors.primary.withOpacity(0.08)),
       child: Column(
         children: [
+          // ── User Typed Address ─────────────────────────────────
           Padding(
             padding: EdgeInsets.all(rs(context, 14)),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _iconChip(context, icon: Icons.location_on_rounded),
+                _iconChip(context, icon: Icons.home_rounded),
                 SizedBox(width: rs(context, 12)),
                 Expanded(
-                  child: Text(
-                    addressText,
-                    style:
-                    AppTextStyles.bodyMedium(context).copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: canNavigate
-                          ? AppColors.textPrimary
-                          : AppColors.textSecondary,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Customer Address",
+                        style: AppTextStyles.bodySmall(context).copyWith(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      SizedBox(height: rs(context, 4)),
+                      Text(
+                        addressText,
+                        style: AppTextStyles.bodyMedium(context).copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: canNavigate
+                              ? AppColors.textPrimary
+                              : AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
-          const Divider(height: 1),
+
+          // ── Google Address (only if available) ─────────────────
+          if (hasGoogleAddress) ...[
+            Divider(
+              height: 1,
+              color: AppColors.textSecondary.withOpacity(0.08),
+            ),
+            Padding(
+              padding: EdgeInsets.all(rs(context, 14)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _iconChip(
+                    context,
+                    icon: Icons.location_on_rounded,
+                    color: AppColors.success,
+                  ),
+                  SizedBox(width: rs(context, 12)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              "Google Address",
+                              style: AppTextStyles.bodySmall(context).copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(width: rs(context, 6)),
+                            // Google badge
+                            CustomContainer(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: rs(context, 6),
+                                vertical: rs(context, 2),
+                              ),
+                              backgroundColor: AppColors.success.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(rs(context, 4)),
+                              child: Text(
+                                "Google",
+                                style: AppTextStyles.bodySmall(context).copyWith(
+                                  color: AppColors.success,
+                                  fontSize: rs(context, 10),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: rs(context, 4)),
+                        Text(
+                          googleAddress,
+                          style: AppTextStyles.bodyMedium(context).copyWith(
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+
+          // ── Navigation Button ───────────────────────────────────
+          Divider(height: 1, color: AppColors.textSecondary.withOpacity(0.08)),
           Padding(
             padding: EdgeInsets.all(rs(context, 14)),
             child: InkWell(
@@ -2482,8 +2633,8 @@ class OrderDetailsPage extends StatelessWidget {
                       () => NavigationPage(
                     destinationLat: address.latitude!,
                     destinationLng: address.longitude!,
-                    destinationName: address.formattedAddress ??
-                        "Customer Location",
+                    destinationName:
+                    address.formattedAddress ?? "Customer Location",
                   ),
                   transition: Transition.downToUp,
                   duration: const Duration(milliseconds: 400),
