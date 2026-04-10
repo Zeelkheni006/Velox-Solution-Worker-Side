@@ -243,6 +243,8 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
 
       FullScreenLoader.hide();
 
+      logPrint("CONFIRM RESCHEDULING RESPONSE ::: $res");
+
       if (res['success'] == true) {
         if (Navigator.canPop(context)) Navigator.of(context).pop();
         await Future.delayed(const Duration(milliseconds: 250));
@@ -310,12 +312,9 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
     }
 
     // Safe extraction — no hard casts, everything via toString() / num cast
-    final String msg =
-        message['message']?.toString() ?? 'Order rescheduled successfully';
-    final int newOrderId =
-        (message['new_order_id'] as num?)?.toInt() ?? 0;
-    final String newStatus =
-        message['new_order_status']?.toString() ?? '';
+    final String msg = message['message']?.toString() ?? 'Order rescheduled successfully';
+    final String newBookingCode = message['new_booking_code']?.toString() ?? '';
+    final String newStatus = message['new_order_status']?.toString() ?? '';
 
     // reschedule_request is Map<String, dynamic> after jsonDecode
     final Map<String, dynamic>? rescheduleRequest =
@@ -333,7 +332,7 @@ class _RescheduleSheetState extends State<_RescheduleSheet> {
       barrierColor: Colors.black.withOpacity(0.6),
       builder: (dialogCtx) => _SuccessDialogContent(
         message: msg,
-        newOrderId: newOrderId,
+        newBookingCode: newBookingCode,
         newStatus: newStatus,
         dateLabel: _fmtDate(newSlot?['service_date']?.toString()),
         timeLabel: newSlot != null
@@ -991,7 +990,7 @@ class _ShimmerBoxState extends State<_ShimmerBox>
 
 class _SuccessDialogContent extends StatelessWidget {
   final String message;
-  final int newOrderId;
+  final String newBookingCode;
   final String newStatus;
   final String dateLabel;
   final String timeLabel;
@@ -999,7 +998,7 @@ class _SuccessDialogContent extends StatelessWidget {
 
   const _SuccessDialogContent({
     required this.message,
-    required this.newOrderId,
+    required this.newBookingCode,
     required this.newStatus,
     required this.dateLabel,
     required this.timeLabel,
@@ -1055,12 +1054,17 @@ class _SuccessDialogContent extends StatelessWidget {
                   if (timeLabel.isNotEmpty)
                     _row(context, Icons.schedule_rounded, 'New Slot',
                         timeLabel),
-                  if (newOrderId > 0) ...[
+                  if (newBookingCode.isNotEmpty) ...[
                     Divider(
-                        height: rs(context, 16),
-                        color: AppColors.success.withOpacity(0.15)),
-                    _row(context, Icons.tag_rounded, 'New Order ID',
-                        '#$newOrderId'),
+                      height: rs(context, 16),
+                      color: AppColors.success.withOpacity(0.15),
+                    ),
+                    _row(
+                      context,
+                      Icons.tag_rounded,
+                      'New Booking ID',
+                      newBookingCode,
+                    ),
                   ],
                   if (newStatus.isNotEmpty) ...[
                     Divider(

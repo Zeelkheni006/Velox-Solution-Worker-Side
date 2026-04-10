@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:http/http.dart' as http;
+import '../../../App_Safety/app_safety.dart';
 import '../../../utils/app_storage.dart';
 import '../../../utils/device_info_service.dart';
 import '../../api_endpoints.dart';
@@ -33,6 +34,9 @@ class SendFcmToken {
       }
 
       final fcmToken = await FirebaseMessaging.instance.getToken();
+
+      logPrint("FCM TOKEN ::: $fcmToken");
+
       if (fcmToken == null || fcmToken.isEmpty) {
         return {'success': false, 'message': 'FCM token not available'};
       }
