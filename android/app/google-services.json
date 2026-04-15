@@ -1,0 +1,49 @@
+{
+  "project_info": {
+    "project_number": "622074914589",
+    "firebase_url": "https://velox-8ed38-default-rtdb.firebaseio.com",
+    "project_id": "velox-8ed38",
+    "storage_bucket": "velox-8ed38.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:622074914589:android:91f8664c836ed4534aa3f4",
+        "android_client_info": {
+          "package_name": "com.veloxsolution.velox"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdZj38vFwieniaRpOpoMhehezfIZVbAfE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:622074914589:android:5501adeb10d31d4b4aa3f4",
+        "android_client_info": {
+          "package_name": "com.veloxsolution.veloxworker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdZj38vFwieniaRpOpoMhehezfIZVbAfE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
